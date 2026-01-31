@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>IP Checker - Test Proxy Uniqueness</title>
+    <style>
+        body { font-family: Arial; max-width: 800px; margin: 0 auto; padding: 20px; background: #f0f2f5; }
+        .container { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
+        h1 { color: #2563eb; text-align: center; }
+        .btn { background: #2563eb; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-size: 16px; margin: 10px 5px; }
+        .btn:hover { background: #1d4ed8; }
+        .ip-display { background: #f8fafc; padding: 20px; border-radius: 10px; margin: 20px 0; border: 2px solid #e2e8f0; }
+        #currentIp { font-size: 28px; font-weight: bold; color: #1e293b; margin: 10px 0; font-family: monospace; }
+        .unique { color: green; font-weight: bold; }
+        .duplicate { color: red; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        th { background: #2563eb; color: white; padding: 12px; text-align: left; }
+        td { padding: 12px; border-bottom: 1px solid #e2e8f0; }
+        .history-box { max-height: 300px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px; }
+        footer { text-align: center; margin-top: 30px; color: #64748b; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 IP Duplicate Checker</h1>
+        <p>Check if your proxy IP is unique or duplicate. Perfect for GoLogin testing!</p>
+        
+        <div class="ip-display">
+            <p>Your Current IP:</p>
+            <div id="currentIp">Click check button below</div>
+            <div id="status"></div>
+        </div>
+        
+        <button class="btn" onclick="checkIP()">Check IP Now</button>
+        <button class="btn" onclick="clearHistory()" style="background: #dc2626;">Clear History</button>
+        <button class="btn" onclick="exportData()" style="background: #059669;">Export Data</button>
+        
+        <h3>IP History</h3>
+        <div class="history-box">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>IP Address</th>
+                        <th>Status</th>
+                        <th>Location</th>
+                    </tr>
+                </thead>
+                <tbody id="historyBody">
+                    <!-- History will appear here -->
+                </tbody>
+            </table>
+        </div>
+        
+        <div style="margin: 20px 0; padding: 15px; background: #fef3c7; border-radius: 8px;">
+            <h4>How to Use:</h4>
+            <ol>
+                <li>Open GoLogin browser with your proxy</li>
+                <li>Visit this page</li>
+                <li>Click "Check IP Now"</li>
+                <li>If status is <span class="unique">UNIQUE</span> → Good! New IP</li>
+                <li>If status is <span class="duplicate">DUPLICATE</span> → Same IP seen before</li>
+                <li>Restart browser to get new IP</li>
+            </ol>
+        </div>
+        
+        <footer>
+            <p>All data stored locally in your browser | No data sent to servers</p>
+            <p>Made for proxy testing | Use with GoLogin, residential proxies</p>
+        </footer>
+    </div>
+
+    <script>
+        let ipHistory = [];
+        
+        // Load saved history
+        function loadHistory() {
+            const saved = localStorage.getItem('ipHistory');
+            if (saved) ipHistory = JSON.parse(saved);
+            updateTable();
+        }
+        
+        // Check IP function
+        async function checkIP() {
+            try {
+                // Get current IP
+                const response = await fetch('https://api.ipify.org?format=json');
+                const data = await response.json();
+                const currentIP = data.ip;
+                
+                document.getElementById('currentIp').textContent = currentIP;
+                
+                // Check if duplicate
+                const isDuplicate = ipHistory.some(entry => entry.ip === currentIP);
+                
+                // Update status
+                const statusDiv = document.getElementById('status');
+                if (isDuplicate) {
+                    statusDiv.innerHTML = '<span class="duplicate">❌ DUPLICATE - This IP was seen before</span>';
+                } else {
+                    statusDiv.innerHTML = '<span class="unique">✅ UNIQUE - New IP!</span>';
+                    
+                    // Get location info
+                    let location = 'Loading...';
+                    try {
+                        const locResponse = await fetch(`https://ipapi.co/${currentIP}/json/`);
+                        const locData = await locResponse.json();
+                        location = `${locData.city || 'Unknown'}, ${locData.region || 'Unknown'}, ${locData.country_name || 'Unknown'}`;
+                    } catch (e) {
+                        location = 'Unknown';
+                    }
+                    
+                    // Add to history
+                    const now = new Date();
+                    ipHistory.unshift({
+                        ip: currentIP,
+                        time: now.toLocaleTimeString(),
+                        date: now.toLocaleDateString(),
+                        status: 'Unique',
+                        location: location,
+                        timestamp: now.getTime()
+                    });
+                    
+                    // Save to localStorage
+                    localStorage.setItem('ipHistory', JSON.stringify(ipHistory));
+                }
+                
+                updateTable();
+                
+            } catch (error) {
+                document.getElementById('currentIp').textContent = 'Error getting IP';
+                document.getElementById('status').innerHTML = '<span style="color: red;">Error: Check internet connection</span>';
+            }
+        }
+        
+        // Update history table
+        function updateTable() {
+            const tbody = document.getElementById('historyBody');
+            tbody.innerHTML = '';
+            
+            ipHistory.slice(0, 20).forEach(entry => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${entry.time}</td>
+                    <td>${entry.ip}</td>
+                    <td class="${entry.status === 'Unique' ? 'unique' : 'duplicate'}">${entry.status}</td>
+                    <td>${entry.location || 'Unknown'}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+        
+        // Clear history
+        function clearHistory() {
+            if (confirm('Clear all IP history?')) {
+                ipHistory = [];
+                localStorage.removeItem('ipHistory');
+                updateTable();
+                document.getElementById('currentIp').textContent = 'History cleared';
+                document.getElementById('status').textContent = '';
+            }
+        }
+        
+        // Export data
+        function exportData() {
+            const data = JSON.stringify(ipHistory, null, 2);
+            const blob = new Blob([data], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'ip-history-' + new Date().toISOString().split('T')[0] + '.json';
+            a.click();
+        }
+        
+        // Load history on page load
+        window.onload = loadHistory;
+    </script>
+</body>
+</html>
