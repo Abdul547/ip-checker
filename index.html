@@ -1,178 +1,556 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>IP Checker - Test Proxy Uniqueness</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IP Checker with Persistent Storage</title>
     <style>
-        body { font-family: Arial; max-width: 800px; margin: 0 auto; padding: 20px; background: #f0f2f5; }
-        .container { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
-        h1 { color: #2563eb; text-align: center; }
-        .btn { background: #2563eb; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-size: 16px; margin: 10px 5px; }
-        .btn:hover { background: #1d4ed8; }
-        .ip-display { background: #f8fafc; padding: 20px; border-radius: 10px; margin: 20px 0; border: 2px solid #e2e8f0; }
-        #currentIp { font-size: 28px; font-weight: bold; color: #1e293b; margin: 10px 0; font-family: monospace; }
-        .unique { color: green; font-weight: bold; }
-        .duplicate { color: red; font-weight: bold; }
-        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-        th { background: #2563eb; color: white; padding: 12px; text-align: left; }
-        td { padding: 12px; border-bottom: 1px solid #e2e8f0; }
-        .history-box { max-height: 300px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px; }
-        footer { text-align: center; margin-top: 30px; color: #64748b; font-size: 14px; }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #0f172a;
+            color: #e2e8f0;
+            line-height: 1.6;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #334155;
+        }
+        
+        h1 {
+            color: #60a5fa;
+            margin-bottom: 10px;
+            font-size: 2.8rem;
+        }
+        
+        .subtitle {
+            color: #94a3b8;
+            font-size: 1.1rem;
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .card {
+            background-color: #1e293b;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        }
+        
+        .card h2 {
+            color: #38bdf8;
+            margin-bottom: 20px;
+            font-size: 1.8rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .card h2 i {
+            font-size: 1.5rem;
+        }
+        
+        .ip-display {
+            font-size: 2.5rem;
+            font-weight: bold;
+            text-align: center;
+            color: #34d399;
+            margin: 20px 0;
+            padding: 15px;
+            background-color: rgba(52, 211, 153, 0.1);
+            border-radius: 8px;
+            word-break: break-all;
+        }
+        
+        .status {
+            font-size: 1.3rem;
+            text-align: center;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        
+        .unique {
+            background-color: rgba(34, 197, 94, 0.2);
+            color: #4ade80;
+            border: 1px solid #4ade80;
+        }
+        
+        .duplicate {
+            background-color: rgba(239, 68, 68, 0.2);
+            color: #f87171;
+            border: 1px solid #f87171;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 25px;
+        }
+        
+        .stat-box {
+            background-color: #334155;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #60a5fa;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            color: #94a3b8;
+            margin-top: 5px;
+        }
+        
+        .history-card {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .history-container {
+            flex-grow: 1;
+            overflow-y: auto;
+            max-height: 400px;
+            margin-top: 10px;
+        }
+        
+        .ip-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 15px;
+            margin-bottom: 10px;
+            background-color: #334155;
+            border-radius: 6px;
+            border-left: 4px solid #60a5fa;
+        }
+        
+        .ip-item.duplicate-ip {
+            border-left-color: #f87171;
+        }
+        
+        .ip-address {
+            font-family: monospace;
+            font-size: 1.1rem;
+        }
+        
+        .ip-time {
+            font-size: 0.85rem;
+            color: #94a3b8;
+        }
+        
+        .actions {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        button {
+            padding: 12px 25px;
+            background-color: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        button:hover {
+            background-color: #2563eb;
+            transform: translateY(-2px);
+        }
+        
+        button.secondary {
+            background-color: #475569;
+        }
+        
+        button.secondary:hover {
+            background-color: #334155;
+        }
+        
+        button.danger {
+            background-color: #dc2626;
+        }
+        
+        button.danger:hover {
+            background-color: #b91c1c;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #334155;
+            color: #94a3b8;
+            font-size: 0.9rem;
+        }
+        
+        .storage-type {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .storage-badge {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            background-color: #7c3aed;
+            color: white;
+        }
+        
+        .empty-history {
+            text-align: center;
+            padding: 40px 20px;
+            color: #94a3b8;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #60a5fa;
+        }
+        
+        .api-credit {
+            margin-top: 10px;
+            font-size: 0.8rem;
+            color: #64748b;
+            text-align: center;
+        }
     </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
     <div class="container">
-        <h1>🔍 IP Duplicate Checker</h1>
-        <p>Check if your proxy IP is unique or duplicate. Perfect for GoLogin testing!</p>
+        <header>
+            <h1><i class="fas fa-network-wired"></i> IP Address Tracker</h1>
+            <p class="subtitle">Permanently stores IP addresses and checks for duplicates</p>
+        </header>
         
-        <div class="ip-display">
-            <p>Your Current IP:</p>
-            <div id="currentIp">Click check button below</div>
-            <div id="status"></div>
-        </div>
-        
-        <button class="btn" onclick="checkIP()">Check IP Now</button>
-        <button class="btn" onclick="clearHistory()" style="background: #dc2626;">Clear History</button>
-        <button class="btn" onclick="exportData()" style="background: #059669;">Export Data</button>
-        
-        <h3>IP History</h3>
-        <div class="history-box">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Time</th>
-                        <th>IP Address</th>
-                        <th>Status</th>
-                        <th>Location</th>
-                    </tr>
-                </thead>
-                <tbody id="historyBody">
-                    <!-- History will appear here -->
-                </tbody>
-            </table>
-        </div>
-        
-        <div style="margin: 20px 0; padding: 15px; background: #fef3c7; border-radius: 8px;">
-            <h4>How to Use:</h4>
-            <ol>
-                <li>Open GoLogin browser with your proxy</li>
-                <li>Visit this page</li>
-                <li>Click "Check IP Now"</li>
-                <li>If status is <span class="unique">UNIQUE</span> → Good! New IP</li>
-                <li>If status is <span class="duplicate">DUPLICATE</span> → Same IP seen before</li>
-                <li>Restart browser to get new IP</li>
-            </ol>
+        <div class="main-content">
+            <div class="card">
+                <h2><i class="fas fa-search-location"></i> Current IP Information</h2>
+                
+                <div class="loading" id="loading">
+                    <i class="fas fa-spinner fa-spin"></i> Detecting your IP address...
+                </div>
+                
+                <div id="ip-info" style="display: none;">
+                    <div class="ip-display" id="current-ip">192.168.1.1</div>
+                    
+                    <div id="status-message" class="status">
+                        <!-- Status will be inserted here -->
+                    </div>
+                    
+                    <div class="stats">
+                        <div class="stat-box">
+                            <div class="stat-value" id="total-ips">0</div>
+                            <div class="stat-label">Total IPs Stored</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-value" id="unique-ips">0</div>
+                            <div class="stat-label">Unique IPs</div>
+                        </div>
+                    </div>
+                    
+                    <div class="actions">
+                        <button id="check-ip"><i class="fas fa-sync-alt"></i> Check Again</button>
+                        <button id="clear-storage" class="danger"><i class="fas fa-trash-alt"></i> Clear All Data</button>
+                    </div>
+                    
+                    <div class="api-credit">
+                        IP detection powered by <a href="https://ipapi.co" target="_blank" style="color: #60a5fa;">ipapi.co</a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card history-card">
+                <h2><i class="fas fa-history"></i> IP History</h2>
+                
+                <div class="history-container" id="ip-history">
+                    <div class="empty-history" id="empty-history">
+                        <i class="fas fa-inbox fa-2x" style="margin-bottom: 10px;"></i>
+                        <p>No IP addresses stored yet.</p>
+                        <p>Your IP will appear here after checking.</p>
+                    </div>
+                    <!-- IP history items will be inserted here -->
+                </div>
+                
+                <div class="storage-type">
+                    <span>Storage Method:</span>
+                    <span class="storage-badge" id="storage-type">LocalStorage</span>
+                </div>
+            </div>
         </div>
         
         <footer>
-            <p>All data stored locally in your browser | No data sent to servers</p>
-            <p>Made for proxy testing | Use with GoLogin, residential proxies</p>
+            <p>IP Checker with Persistent Storage &bull; Automatically stores IP addresses and detects duplicates</p>
+            <p>Data is stored locally in your browser and persists between sessions</p>
         </footer>
     </div>
 
     <script>
-        let ipHistory = [];
+        // DOM Elements
+        const loadingElement = document.getElementById('loading');
+        const ipInfoElement = document.getElementById('ip-info');
+        const currentIpElement = document.getElementById('current-ip');
+        const statusMessageElement = document.getElementById('status-message');
+        const totalIpsElement = document.getElementById('total-ips');
+        const uniqueIpsElement = document.getElementById('unique-ips');
+        const ipHistoryElement = document.getElementById('ip-history');
+        const emptyHistoryElement = document.getElementById('empty-history');
+        const checkIpButton = document.getElementById('check-ip');
+        const clearStorageButton = document.getElementById('clear-storage');
+        const storageTypeElement = document.getElementById('storage-type');
         
-        // Load saved history
-        function loadHistory() {
-            const saved = localStorage.getItem('ipHistory');
-            if (saved) ipHistory = JSON.parse(saved);
-            updateTable();
-        }
+        // Configuration
+        const STORAGE_KEY = 'ipCheckerData';
+        const USE_SERVER_STORAGE = false; // Set to true to use server storage (requires backend)
         
-        // Check IP function
-        async function checkIP() {
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            loadIPData();
+            checkIpButton.addEventListener('click', loadIPData);
+            clearStorageButton.addEventListener('click', clearAllData);
+            
+            // Update storage type display
+            storageTypeElement.textContent = USE_SERVER_STORAGE ? 'Server Storage' : 'LocalStorage';
+        });
+        
+        // Main function to check and store IP
+        async function loadIPData() {
+            showLoading();
+            
             try {
-                // Get current IP
-                const response = await fetch('https://api.ipify.org?format=json');
-                const data = await response.json();
-                const currentIP = data.ip;
+                // Fetch current IP address
+                const ipData = await fetchIP();
                 
-                document.getElementById('currentIp').textContent = currentIP;
+                // Get existing IP data from storage
+                let storedData = await getStoredIPs();
                 
-                // Check if duplicate
-                const isDuplicate = ipHistory.some(entry => entry.ip === currentIP);
+                // Check if this IP is new or duplicate
+                const isDuplicate = storedData.some(item => item.ip === ipData.ip);
+                const isNew = !isDuplicate;
                 
-                // Update status
-                const statusDiv = document.getElementById('status');
-                if (isDuplicate) {
-                    statusDiv.innerHTML = '<span class="duplicate">❌ DUPLICATE - This IP was seen before</span>';
-                } else {
-                    statusDiv.innerHTML = '<span class="unique">✅ UNIQUE - New IP!</span>';
+                // If new IP, add it to storage
+                if (isNew) {
+                    const newEntry = {
+                        ip: ipData.ip,
+                        timestamp: new Date().toISOString(),
+                        isDuplicate: false
+                    };
                     
-                    // Get location info
-                    let location = 'Loading...';
-                    try {
-                        const locResponse = await fetch(`https://ipapi.co/${currentIP}/json/`);
-                        const locData = await locResponse.json();
-                        location = `${locData.city || 'Unknown'}, ${locData.region || 'Unknown'}, ${locData.country_name || 'Unknown'}`;
-                    } catch (e) {
-                        location = 'Unknown';
-                    }
-                    
-                    // Add to history
-                    const now = new Date();
-                    ipHistory.unshift({
-                        ip: currentIP,
-                        time: now.toLocaleTimeString(),
-                        date: now.toLocaleDateString(),
-                        status: 'Unique',
-                        location: location,
-                        timestamp: now.getTime()
-                    });
-                    
-                    // Save to localStorage
-                    localStorage.setItem('ipHistory', JSON.stringify(ipHistory));
+                    storedData.unshift(newEntry); // Add to beginning
+                    await saveIPs(storedData);
                 }
                 
-                updateTable();
+                // Update display
+                updateDisplay(ipData.ip, isDuplicate, storedData);
                 
             } catch (error) {
-                document.getElementById('currentIp').textContent = 'Error getting IP';
-                document.getElementById('status').innerHTML = '<span style="color: red;">Error: Check internet connection</span>';
+                console.error('Error fetching IP:', error);
+                showError();
+            } finally {
+                hideLoading();
             }
         }
         
-        // Update history table
-        function updateTable() {
-            const tbody = document.getElementById('historyBody');
-            tbody.innerHTML = '';
+        // Fetch IP from API
+        async function fetchIP() {
+            try {
+                const response = await fetch('https://ipapi.co/json/');
+                if (!response.ok) throw new Error('IP API failed');
+                const data = await response.json();
+                return { ip: data.ip };
+            } catch (error) {
+                // Fallback to a simpler IP service if the first fails
+                const response = await fetch('https://api.ipify.org?format=json');
+                const data = await response.json();
+                return { ip: data.ip };
+            }
+        }
+        
+        // Get stored IPs from localStorage or server
+        async function getStoredIPs() {
+            if (USE_SERVER_STORAGE) {
+                // For server storage, you would make an API call here
+                // Example: return await fetch('/api/ips').then(res => res.json());
+                console.log('Server storage would be used in a full implementation');
+            }
             
-            ipHistory.slice(0, 20).forEach(entry => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${entry.time}</td>
-                    <td>${entry.ip}</td>
-                    <td class="${entry.status === 'Unique' ? 'unique' : 'duplicate'}">${entry.status}</td>
-                    <td>${entry.location || 'Unknown'}</td>
+            // Default to localStorage
+            const stored = localStorage.getItem(STORAGE_KEY);
+            return stored ? JSON.parse(stored) : [];
+        }
+        
+        // Save IPs to storage
+        async function saveIPs(ipList) {
+            if (USE_SERVER_STORAGE) {
+                // For server storage, you would make an API call here
+                // Example: await fetch('/api/ips', { method: 'POST', body: JSON.stringify(ipList) });
+                console.log('Server storage would be used in a full implementation');
+            }
+            
+            // Default to localStorage
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(ipList));
+        }
+        
+        // Update the UI with IP data
+        function updateDisplay(currentIp, isDuplicate, ipList) {
+            // Update current IP
+            currentIpElement.textContent = currentIp;
+            
+            // Update status message
+            statusMessageElement.textContent = isDuplicate 
+                ? 'This IP address has been seen before (Duplicate)' 
+                : 'This is a new IP address (Unique)';
+            
+            statusMessageElement.className = `status ${isDuplicate ? 'duplicate' : 'unique'}`;
+            
+            // Update statistics
+            const uniqueIps = new Set(ipList.map(item => item.ip)).size;
+            totalIpsElement.textContent = ipList.length;
+            uniqueIpsElement.textContent = uniqueIps;
+            
+            // Update history display
+            updateHistoryDisplay(ipList);
+            
+            // Show the IP info section
+            ipInfoElement.style.display = 'block';
+        }
+        
+        // Update the history display
+        function updateHistoryDisplay(ipList) {
+            if (ipList.length === 0) {
+                emptyHistoryElement.style.display = 'block';
+                return;
+            }
+            
+            emptyHistoryElement.style.display = 'none';
+            
+            // Clear existing history items (except empty message)
+            const existingItems = ipHistoryElement.querySelectorAll('.ip-item');
+            existingItems.forEach(item => item.remove());
+            
+            // Add each IP to the history
+            ipList.forEach(entry => {
+                const ipItem = document.createElement('div');
+                ipItem.className = `ip-item ${entry.isDuplicate ? 'duplicate-ip' : ''}`;
+                
+                const time = new Date(entry.timestamp);
+                const timeString = time.toLocaleString();
+                
+                ipItem.innerHTML = `
+                    <div>
+                        <div class="ip-address">${entry.ip}</div>
+                        <div class="ip-time">${timeString}</div>
+                    </div>
+                    <div>
+                        ${entry.isDuplicate 
+                            ? '<span style="color:#f87171;"><i class="fas fa-clone"></i> Duplicate</span>' 
+                            : '<span style="color:#4ade80;"><i class="fas fa-star"></i> Unique</span>'}
+                    </div>
                 `;
-                tbody.appendChild(row);
+                
+                ipHistoryElement.appendChild(ipItem);
             });
         }
         
-        // Clear history
-        function clearHistory() {
-            if (confirm('Clear all IP history?')) {
-                ipHistory = [];
-                localStorage.removeItem('ipHistory');
-                updateTable();
-                document.getElementById('currentIp').textContent = 'History cleared';
-                document.getElementById('status').textContent = '';
+        // Clear all stored data
+        async function clearAllData() {
+            if (confirm('Are you sure you want to delete all stored IP addresses? This cannot be undone.')) {
+                if (USE_SERVER_STORAGE) {
+                    // For server storage, you would make an API call here
+                    // Example: await fetch('/api/ips', { method: 'DELETE' });
+                    console.log('Server storage would be used in a full implementation');
+                }
+                
+                localStorage.removeItem(STORAGE_KEY);
+                
+                // Reset display
+                totalIpsElement.textContent = '0';
+                uniqueIpsElement.textContent = '0';
+                ipInfoElement.style.display = 'none';
+                emptyHistoryElement.style.display = 'block';
+                
+                // Clear history items
+                const existingItems = ipHistoryElement.querySelectorAll('.ip-item');
+                existingItems.forEach(item => item.remove());
+                
+                // Show loading again
+                showLoading();
+                
+                // Re-check current IP to start fresh
+                setTimeout(() => {
+                    loadIPData();
+                }, 500);
             }
         }
         
-        // Export data
-        function exportData() {
-            const data = JSON.stringify(ipHistory, null, 2);
-            const blob = new Blob([data], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'ip-history-' + new Date().toISOString().split('T')[0] + '.json';
-            a.click();
+        // UI helper functions
+        function showLoading() {
+            loadingElement.style.display = 'block';
+            ipInfoElement.style.display = 'none';
         }
         
-        // Load history on page load
-        window.onload = loadHistory;
+        function hideLoading() {
+            loadingElement.style.display = 'none';
+        }
+        
+        function showError() {
+            loadingElement.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Failed to retrieve IP. Please check your connection and try again.';
+            loadingElement.style.color = '#f87171';
+        }
+        
+        // Load existing data on page load
+        window.addEventListener('load', async () => {
+            const storedData = await getStoredIPs();
+            if (storedData.length > 0) {
+                updateHistoryDisplay(storedData);
+                const uniqueIps = new Set(storedData.map(item => item.ip)).size;
+                totalIpsElement.textContent = storedData.length;
+                uniqueIpsElement.textContent = uniqueIps;
+            }
+        });
     </script>
 </body>
 </html>
