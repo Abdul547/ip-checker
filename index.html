@@ -109,6 +109,34 @@
             border: 1px solid #f87171;
         }
         
+        .ip-details {
+            background-color: rgba(30, 41, 59, 0.8);
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+        }
+        
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+        
+        .detail-label {
+            color: #94a3b8;
+            font-weight: 500;
+        }
+        
+        .detail-value {
+            color: #e2e8f0;
+            font-weight: 600;
+        }
+        
         .stats {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -144,7 +172,7 @@
         .history-container {
             flex-grow: 1;
             overflow-y: auto;
-            max-height: 400px;
+            max-height: 500px;
             margin-top: 10px;
         }
         
@@ -166,11 +194,23 @@
         .ip-address {
             font-family: monospace;
             font-size: 1.1rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .ip-location {
+            font-size: 0.85rem;
+            color: #94a3b8;
         }
         
         .ip-time {
-            font-size: 0.85rem;
-            color: #94a3b8;
+            font-size: 0.8rem;
+            color: #64748b;
+            margin-top: 3px;
+        }
+        
+        .ip-status {
+            text-align: right;
         }
         
         .actions {
@@ -257,6 +297,16 @@
             color: #64748b;
             text-align: center;
         }
+        
+        .visit-count {
+            background: rgba(239, 68, 68, 0.1);
+            color: #f87171;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            margin-left: 5px;
+        }
     </style>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
@@ -272,7 +322,7 @@
                 <h2><i class="fas fa-search-location"></i> Current IP Information</h2>
                 
                 <div class="loading" id="loading">
-                    <i class="fas fa-spinner fa-spin"></i> Detecting your IP address...
+                    <i class="fas fa-spinner fa-spin"></i> Detecting your IP address and location...
                 </div>
                 
                 <div id="ip-info" style="display: none;">
@@ -280,6 +330,10 @@
                     
                     <div id="status-message" class="status">
                         <!-- Status will be inserted here -->
+                    </div>
+                    
+                    <div class="ip-details" id="ip-details">
+                        <!-- IP details will be inserted here -->
                     </div>
                     
                     <div class="stats">
@@ -332,7 +386,7 @@
 
     <script>
         // ============================================
-        // IP CHECKER WITH PERMANENT STORAGE
+        // IP CHECKER WITH COMPLETE DETAILS & MULTIPLE IP STORAGE
         // ============================================
         
         // DOM Elements
@@ -340,6 +394,7 @@
         const ipInfoElement = document.getElementById('ip-info');
         const currentIpElement = document.getElementById('current-ip');
         const statusMessageElement = document.getElementById('status-message');
+        const ipDetailsElement = document.getElementById('ip-details');
         const totalIpsElement = document.getElementById('total-ips');
         const uniqueIpsElement = document.getElementById('unique-ips');
         const ipHistoryElement = document.getElementById('ip-history');
@@ -350,7 +405,7 @@
         const storageTypeElement = document.getElementById('storage-type');
         
         // Configuration
-        const STORAGE_KEY = 'ipCheckerData_v2';
+        const STORAGE_KEY = 'ipCheckerData_v3';
         
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
@@ -370,14 +425,14 @@
         });
         
         // ============================================
-        // 1. MAIN FUNCTION - CHECK & STORE IP
+        // 1. MAIN FUNCTION - CHECK & STORE IP WITH DETAILS
         // ============================================
         async function checkCurrentIP() {
             showLoading();
             
             try {
-                // Get current IP
-                const currentIP = await fetchIP();
+                // Get current IP with details
+                const ipData = await fetchIPWithDetails();
                 
                 // Get existing stored IPs
                 let storedIPs = getStoredIPs();
@@ -387,22 +442,33 @@
                 let existingEntry = null;
                 
                 for (let entry of storedIPs) {
-                    if (entry.ip === currentIP) {
+                    if (entry.ip === ipData.ip) {
                         isDuplicate = true;
                         existingEntry = entry;
                         break;
                     }
                 }
                 
-                // Prepare IP entry
+                // Prepare IP entry with all details
                 const now = new Date().toISOString();
                 const ipEntry = {
-                    ip: currentIP,
+                    ip: ipData.ip,
                     timestamp: now,
                     isDuplicate: isDuplicate,
                     firstSeen: isDuplicate ? existingEntry.firstSeen : now,
                     lastSeen: now,
-                    checkCount: isDuplicate ? (existingEntry.checkCount || 1) + 1 : 1
+                    checkCount: isDuplicate ? (existingEntry.checkCount || 1) + 1 : 1,
+                    details: {
+                        city: ipData.city || 'Unknown',
+                        region: ipData.region || 'Unknown',
+                        country: ipData.country || 'Unknown',
+                        country_name: ipData.country_name || 'Unknown',
+                        latitude: ipData.latitude,
+                        longitude: ipData.longitude,
+                        timezone: ipData.timezone || 'Unknown',
+                        org: ipData.org || 'Unknown',
+                        postal: ipData.postal || 'Unknown'
+                    }
                 };
                 
                 // If NEW IP, add to storage
@@ -411,26 +477,105 @@
                     saveIPs(storedIPs);
                 } else {
                     // Update existing entry
-                    const index = storedIPs.findIndex(item => item.ip === currentIP);
+                    const index = storedIPs.findIndex(item => item.ip === ipData.ip);
                     if (index !== -1) {
-                        storedIPs[index] = ipEntry;
+                        // Update details and timestamp
+                        storedIPs[index] = {
+                            ...storedIPs[index],
+                            timestamp: now,
+                            lastSeen: now,
+                            checkCount: storedIPs[index].checkCount + 1,
+                            details: ipEntry.details // Update details in case they changed
+                        };
                         saveIPs(storedIPs);
                     }
                 }
                 
                 // Update display
-                updateDisplay(currentIP, isDuplicate, storedIPs);
+                updateDisplay(ipEntry, storedIPs);
                 
             } catch (error) {
                 console.error('Error:', error);
-                showError('Failed to get IP. Please try again.');
+                showError('Failed to get IP details. Please try again.');
             } finally {
                 hideLoading();
             }
         }
         
         // ============================================
-        // 2. STORAGE FUNCTIONS
+        // 2. IP FETCHING WITH DETAILS
+        // ============================================
+        async function fetchIPWithDetails() {
+            // Try multiple IP APIs
+            const ipServices = [
+                {
+                    url: 'https://ipapi.co/json/',
+                    parser: (data) => ({
+                        ip: data.ip,
+                        city: data.city,
+                        region: data.region,
+                        country: data.country_code,
+                        country_name: data.country_name,
+                        latitude: data.latitude,
+                        longitude: data.longitude,
+                        timezone: data.timezone,
+                        org: data.org,
+                        postal: data.postal
+                    })
+                },
+                {
+                    url: 'https://ipinfo.io/json?token=',
+                    parser: (data) => ({
+                        ip: data.ip,
+                        city: data.city,
+                        region: data.region,
+                        country: data.country,
+                        country_name: data.country,
+                        latitude: data.loc ? data.loc.split(',')[0] : null,
+                        longitude: data.loc ? data.loc.split(',')[1] : null,
+                        timezone: data.timezone,
+                        org: data.org,
+                        postal: data.postal
+                    })
+                },
+                {
+                    url: 'https://api.ipify.org?format=json',
+                    parser: (data) => ({
+                        ip: data.ip,
+                        city: 'Unknown',
+                        region: 'Unknown',
+                        country: 'Unknown',
+                        country_name: 'Unknown',
+                        latitude: null,
+                        longitude: null,
+                        timezone: 'Unknown',
+                        org: 'Unknown',
+                        postal: 'Unknown'
+                    })
+                }
+            ];
+            
+            for (let service of ipServices) {
+                try {
+                    const response = await fetch(service.url, { 
+                        timeout: 5000 
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        return service.parser(data);
+                    }
+                } catch (error) {
+                    console.log(`Service ${service.url} failed, trying next...`);
+                    continue;
+                }
+            }
+            
+            throw new Error('All IP services failed');
+        }
+        
+        // ============================================
+        // 3. STORAGE FUNCTIONS
         // ============================================
         function getStoredIPs() {
             try {
@@ -444,9 +589,10 @@
         
         function saveIPs(ipArray) {
             try {
-                // Keep only last 1000 entries to prevent storage overflow
-                const trimmedArray = ipArray.slice(0, 1000);
+                // Keep only last 500 entries to prevent storage overflow
+                const trimmedArray = ipArray.slice(0, 500);
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmedArray));
+                console.log('Saved', trimmedArray.length, 'IPs to storage');
                 return true;
             } catch (error) {
                 console.error('Error saving to storage:', error);
@@ -463,63 +609,74 @@
         }
         
         // ============================================
-        // 3. IP FETCHING
-        // ============================================
-        async function fetchIP() {
-            const ipServices = [
-                'https://api.ipify.org?format=json',
-                'https://api64.ipify.org?format=json',
-                'https://ipinfo.io/json'
-            ];
-            
-            for (let service of ipServices) {
-                try {
-                    const response = await fetch(service, { timeout: 3000 });
-                    if (response.ok) {
-                        const data = await response.json();
-                        return data.ip || data.ipAddress || data.query;
-                    }
-                } catch (error) {
-                    console.log(`Service ${service} failed, trying next...`);
-                    continue;
-                }
-            }
-            
-            throw new Error('All IP services failed');
-        }
-        
-        // ============================================
         // 4. DISPLAY FUNCTIONS
         // ============================================
-        function updateDisplay(currentIP, isDuplicate, storedIPs) {
+        function updateDisplay(ipEntry, storedIPs) {
             // Show IP info section
             ipInfoElement.style.display = 'block';
             
             // Update current IP
-            currentIpElement.textContent = currentIP;
+            currentIpElement.textContent = ipEntry.ip;
             
             // Update status
-            if (isDuplicate) {
+            if (ipEntry.isDuplicate) {
                 statusMessageElement.innerHTML = `
                     <i class="fas fa-exclamation-triangle"></i> 
                     DUPLICATE IP - This IP has been seen before
-                    <br><small>This is not a new IP address</small>
+                    <br><small>Visited ${ipEntry.checkCount} times</small>
                 `;
                 statusMessageElement.className = 'status duplicate';
             } else {
                 statusMessageElement.innerHTML = `
                     <i class="fas fa-check-circle"></i> 
                     UNIQUE IP - First time seeing this IP
-                    <br><small>This is a new IP address</small>
+                    <br><small>New IP address detected</small>
                 `;
                 statusMessageElement.className = 'status unique';
             }
+            
+            // Update IP details
+            updateIPDetails(ipEntry);
             
             // Update statistics
             updateStats(storedIPs);
             
             // Update history
             updateHistoryDisplay(storedIPs);
+        }
+        
+        function updateIPDetails(ipEntry) {
+            const details = ipEntry.details;
+            ipDetailsElement.innerHTML = `
+                <div class="detail-row">
+                    <span class="detail-label">Location:</span>
+                    <span class="detail-value">${details.city}, ${details.region}, ${details.country_name}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Coordinates:</span>
+                    <span class="detail-value">${details.latitude ? details.latitude.toFixed(4) : 'N/A'}, ${details.longitude ? details.longitude.toFixed(4) : 'N/A'}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Timezone:</span>
+                    <span class="detail-value">${details.timezone}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">ISP/Organization:</span>
+                    <span class="detail-value">${details.org}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Postal Code:</span>
+                    <span class="detail-value">${details.postal}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">First Seen:</span>
+                    <span class="detail-value">${new Date(ipEntry.firstSeen).toLocaleString()}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Last Seen:</span>
+                    <span class="detail-value">${new Date(ipEntry.lastSeen).toLocaleString()}</span>
+                </div>
+            `;
         }
         
         function updateStats(ipArray) {
@@ -543,7 +700,7 @@
             emptyHistoryElement.style.display = 'none';
             
             // Add each IP to history
-            ipArray.slice(0, 50).forEach(entry => {
+            ipArray.slice(0, 100).forEach(entry => {
                 const ipItem = document.createElement('div');
                 ipItem.className = `ip-item ${entry.isDuplicate ? 'duplicate-ip' : ''}`;
                 
@@ -551,15 +708,16 @@
                 const timeString = time.toLocaleString();
                 
                 ipItem.innerHTML = `
-                    <div>
+                    <div style="flex-grow: 1;">
                         <div class="ip-address">${entry.ip}</div>
+                        <div class="ip-location">${entry.details.city}, ${entry.details.region}, ${entry.details.country}</div>
                         <div class="ip-time">${timeString}</div>
                     </div>
-                    <div>
+                    <div class="ip-status">
                         ${entry.isDuplicate 
                             ? `<span style="color:#f87171;">
                                  <i class="fas fa-clone"></i> Duplicate
-                                 <br><small>Seen ${entry.checkCount} times</small>
+                                 ${entry.checkCount > 1 ? `<span class="visit-count">${entry.checkCount}</span>` : ''}
                                </span>` 
                             : '<span style="color:#4ade80;"><i class="fas fa-star"></i> Unique</span>'}
                     </div>
@@ -569,12 +727,12 @@
             });
             
             // Show "more" indicator if there are more items
-            if (ipArray.length > 50) {
+            if (ipArray.length > 100) {
                 const moreItem = document.createElement('div');
                 moreItem.className = 'ip-item';
                 moreItem.innerHTML = `
                     <div style="text-align: center; width: 100%; color: #94a3b8;">
-                        ... and ${ipArray.length - 50} more IPs in storage
+                        <i class="fas fa-ellipsis-h"></i> ${ipArray.length - 100} more IPs in storage
                     </div>
                 `;
                 ipHistoryElement.appendChild(moreItem);
@@ -594,6 +752,7 @@
                 currentIpElement.textContent = 'No IP detected';
                 statusMessageElement.textContent = 'Data cleared. Check new IP.';
                 statusMessageElement.className = 'status';
+                ipDetailsElement.innerHTML = '';
                 
                 // Clear history
                 const existingItems = ipHistoryElement.querySelectorAll('.ip-item');
@@ -631,6 +790,7 @@
         
         function showLoading() {
             loadingElement.style.display = 'block';
+            loadingElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Detecting IP address and location details...';
             ipInfoElement.style.display = 'none';
         }
         
@@ -644,9 +804,8 @@
         }
         
         // ============================================
-        // 6. INITIAL LOAD
+        // 6. INITIAL LOAD & AUTO REFRESH
         // ============================================
-        // Auto-check on page load
         window.addEventListener('load', function() {
             const storedIPs = getStoredIPs();
             if (storedIPs.length > 0) {
@@ -654,6 +813,13 @@
                 updateHistoryDisplay(storedIPs);
             }
         });
+        
+        // Auto-check every 5 minutes to collect multiple IPs
+        setInterval(() => {
+            if (!document.hidden) {
+                checkCurrentIP();
+            }
+        }, 300000); // 5 minutes
     </script>
 </body>
 </html>
