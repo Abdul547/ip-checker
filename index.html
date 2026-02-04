@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link rel="icon" type="image/x-icon" href="https://img.icons8.com/color/96/000000/ip-address.png">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>IP Checker with Persistent Storage</title>
@@ -295,6 +296,7 @@
                     <div class="actions">
                         <button id="check-ip"><i class="fas fa-sync-alt"></i> Check Again</button>
                         <button id="clear-storage" class="danger"><i class="fas fa-trash-alt"></i> Clear All Data</button>
+                        <button id="export-data" class="secondary"><i class="fas fa-download"></i> Export Data</button>
                     </div>
                     
                     <div class="api-credit">
@@ -329,6 +331,10 @@
     </div>
 
     <script>
+        // ============================================
+        // IP CHECKER WITH PERMANENT STORAGE
+        // ============================================
+        
         // DOM Elements
         const loadingElement = document.getElementById('loading');
         const ipInfoElement = document.getElementById('ip-info');
@@ -340,139 +346,204 @@
         const emptyHistoryElement = document.getElementById('empty-history');
         const checkIpButton = document.getElementById('check-ip');
         const clearStorageButton = document.getElementById('clear-storage');
+        const exportDataButton = document.getElementById('export-data');
         const storageTypeElement = document.getElementById('storage-type');
         
         // Configuration
-        const STORAGE_KEY = 'ipCheckerData';
-        const USE_SERVER_STORAGE = false; // Set to true to use server storage (requires backend)
+        const STORAGE_KEY = 'ipCheckerData_v2';
         
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
-            loadIPData();
-            checkIpButton.addEventListener('click', loadIPData);
+            // Load existing data
+            loadStoredData();
+            
+            // Check current IP
+            checkCurrentIP();
+            
+            // Button events
+            checkIpButton.addEventListener('click', checkCurrentIP);
             clearStorageButton.addEventListener('click', clearAllData);
+            exportDataButton.addEventListener('click', exportData);
             
             // Update storage type display
-            storageTypeElement.textContent = USE_SERVER_STORAGE ? 'Server Storage' : 'LocalStorage';
+            storageTypeElement.textContent = 'LocalStorage';
         });
         
-        // Main function to check and store IP
-        async function loadIPData() {
+        // ============================================
+        // 1. MAIN FUNCTION - CHECK & STORE IP
+        // ============================================
+        async function checkCurrentIP() {
             showLoading();
             
             try {
-                // Fetch current IP address
-                const ipData = await fetchIP();
+                // Get current IP
+                const currentIP = await fetchIP();
                 
-                // Get existing IP data from storage
-                let storedData = await getStoredIPs();
+                // Get existing stored IPs
+                let storedIPs = getStoredIPs();
                 
-                // Check if this IP is new or duplicate
-                const isDuplicate = storedData.some(item => item.ip === ipData.ip);
-                const isNew = !isDuplicate;
+                // Check if this IP already exists
+                let isDuplicate = false;
+                let existingEntry = null;
                 
-                // If new IP, add it to storage
-                if (isNew) {
-                    const newEntry = {
-                        ip: ipData.ip,
-                        timestamp: new Date().toISOString(),
-                        isDuplicate: false
-                    };
-                    
-                    storedData.unshift(newEntry); // Add to beginning
-                    await saveIPs(storedData);
+                for (let entry of storedIPs) {
+                    if (entry.ip === currentIP) {
+                        isDuplicate = true;
+                        existingEntry = entry;
+                        break;
+                    }
+                }
+                
+                // Prepare IP entry
+                const now = new Date().toISOString();
+                const ipEntry = {
+                    ip: currentIP,
+                    timestamp: now,
+                    isDuplicate: isDuplicate,
+                    firstSeen: isDuplicate ? existingEntry.firstSeen : now,
+                    lastSeen: now,
+                    checkCount: isDuplicate ? (existingEntry.checkCount || 1) + 1 : 1
+                };
+                
+                // If NEW IP, add to storage
+                if (!isDuplicate) {
+                    storedIPs.unshift(ipEntry);
+                    saveIPs(storedIPs);
+                } else {
+                    // Update existing entry
+                    const index = storedIPs.findIndex(item => item.ip === currentIP);
+                    if (index !== -1) {
+                        storedIPs[index] = ipEntry;
+                        saveIPs(storedIPs);
+                    }
                 }
                 
                 // Update display
-                updateDisplay(ipData.ip, isDuplicate, storedData);
+                updateDisplay(currentIP, isDuplicate, storedIPs);
                 
             } catch (error) {
-                console.error('Error fetching IP:', error);
-                showError();
+                console.error('Error:', error);
+                showError('Failed to get IP. Please try again.');
             } finally {
                 hideLoading();
             }
         }
         
-        // Fetch IP from API
-        async function fetchIP() {
+        // ============================================
+        // 2. STORAGE FUNCTIONS
+        // ============================================
+        function getStoredIPs() {
             try {
-                const response = await fetch('https://ipapi.co/json/');
-                if (!response.ok) throw new Error('IP API failed');
-                const data = await response.json();
-                return { ip: data.ip };
+                const stored = localStorage.getItem(STORAGE_KEY);
+                return stored ? JSON.parse(stored) : [];
             } catch (error) {
-                // Fallback to a simpler IP service if the first fails
-                const response = await fetch('https://api.ipify.org?format=json');
-                const data = await response.json();
-                return { ip: data.ip };
+                console.error('Error reading storage:', error);
+                return [];
             }
         }
         
-        // Get stored IPs from localStorage or server
-        async function getStoredIPs() {
-            if (USE_SERVER_STORAGE) {
-                // For server storage, you would make an API call here
-                // Example: return await fetch('/api/ips').then(res => res.json());
-                console.log('Server storage would be used in a full implementation');
+        function saveIPs(ipArray) {
+            try {
+                // Keep only last 1000 entries to prevent storage overflow
+                const trimmedArray = ipArray.slice(0, 1000);
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmedArray));
+                return true;
+            } catch (error) {
+                console.error('Error saving to storage:', error);
+                return false;
+            }
+        }
+        
+        function loadStoredData() {
+            const storedIPs = getStoredIPs();
+            if (storedIPs.length > 0) {
+                updateStats(storedIPs);
+                updateHistoryDisplay(storedIPs);
+            }
+        }
+        
+        // ============================================
+        // 3. IP FETCHING
+        // ============================================
+        async function fetchIP() {
+            const ipServices = [
+                'https://api.ipify.org?format=json',
+                'https://api64.ipify.org?format=json',
+                'https://ipinfo.io/json'
+            ];
+            
+            for (let service of ipServices) {
+                try {
+                    const response = await fetch(service, { timeout: 3000 });
+                    if (response.ok) {
+                        const data = await response.json();
+                        return data.ip || data.ipAddress || data.query;
+                    }
+                } catch (error) {
+                    console.log(`Service ${service} failed, trying next...`);
+                    continue;
+                }
             }
             
-            // Default to localStorage
-            const stored = localStorage.getItem(STORAGE_KEY);
-            return stored ? JSON.parse(stored) : [];
+            throw new Error('All IP services failed');
         }
         
-        // Save IPs to storage
-        async function saveIPs(ipList) {
-            if (USE_SERVER_STORAGE) {
-                // For server storage, you would make an API call here
-                // Example: await fetch('/api/ips', { method: 'POST', body: JSON.stringify(ipList) });
-                console.log('Server storage would be used in a full implementation');
-            }
+        // ============================================
+        // 4. DISPLAY FUNCTIONS
+        // ============================================
+        function updateDisplay(currentIP, isDuplicate, storedIPs) {
+            // Show IP info section
+            ipInfoElement.style.display = 'block';
             
-            // Default to localStorage
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(ipList));
-        }
-        
-        // Update the UI with IP data
-        function updateDisplay(currentIp, isDuplicate, ipList) {
             // Update current IP
-            currentIpElement.textContent = currentIp;
+            currentIpElement.textContent = currentIP;
             
-            // Update status message
-            statusMessageElement.textContent = isDuplicate 
-                ? 'This IP address has been seen before (Duplicate)' 
-                : 'This is a new IP address (Unique)';
-            
-            statusMessageElement.className = `status ${isDuplicate ? 'duplicate' : 'unique'}`;
+            // Update status
+            if (isDuplicate) {
+                statusMessageElement.innerHTML = `
+                    <i class="fas fa-exclamation-triangle"></i> 
+                    DUPLICATE IP - This IP has been seen before
+                    <br><small>This is not a new IP address</small>
+                `;
+                statusMessageElement.className = 'status duplicate';
+            } else {
+                statusMessageElement.innerHTML = `
+                    <i class="fas fa-check-circle"></i> 
+                    UNIQUE IP - First time seeing this IP
+                    <br><small>This is a new IP address</small>
+                `;
+                statusMessageElement.className = 'status unique';
+            }
             
             // Update statistics
-            const uniqueIps = new Set(ipList.map(item => item.ip)).size;
-            totalIpsElement.textContent = ipList.length;
-            uniqueIpsElement.textContent = uniqueIps;
+            updateStats(storedIPs);
             
-            // Update history display
-            updateHistoryDisplay(ipList);
-            
-            // Show the IP info section
-            ipInfoElement.style.display = 'block';
+            // Update history
+            updateHistoryDisplay(storedIPs);
         }
         
-        // Update the history display
-        function updateHistoryDisplay(ipList) {
-            if (ipList.length === 0) {
+        function updateStats(ipArray) {
+            const totalIPs = ipArray.length;
+            const uniqueIPs = new Set(ipArray.map(item => item.ip)).size;
+            
+            totalIpsElement.textContent = totalIPs;
+            uniqueIpsElement.textContent = uniqueIPs;
+        }
+        
+        function updateHistoryDisplay(ipArray) {
+            // Clear existing items
+            const existingItems = ipHistoryElement.querySelectorAll('.ip-item');
+            existingItems.forEach(item => item.remove());
+            
+            if (ipArray.length === 0) {
                 emptyHistoryElement.style.display = 'block';
                 return;
             }
             
             emptyHistoryElement.style.display = 'none';
             
-            // Clear existing history items (except empty message)
-            const existingItems = ipHistoryElement.querySelectorAll('.ip-item');
-            existingItems.forEach(item => item.remove());
-            
-            // Add each IP to the history
-            ipList.forEach(entry => {
+            // Add each IP to history
+            ipArray.slice(0, 50).forEach(entry => {
                 const ipItem = document.createElement('div');
                 ipItem.className = `ip-item ${entry.isDuplicate ? 'duplicate-ip' : ''}`;
                 
@@ -486,47 +557,78 @@
                     </div>
                     <div>
                         ${entry.isDuplicate 
-                            ? '<span style="color:#f87171;"><i class="fas fa-clone"></i> Duplicate</span>' 
+                            ? `<span style="color:#f87171;">
+                                 <i class="fas fa-clone"></i> Duplicate
+                                 <br><small>Seen ${entry.checkCount} times</small>
+                               </span>` 
                             : '<span style="color:#4ade80;"><i class="fas fa-star"></i> Unique</span>'}
                     </div>
                 `;
                 
                 ipHistoryElement.appendChild(ipItem);
             });
+            
+            // Show "more" indicator if there are more items
+            if (ipArray.length > 50) {
+                const moreItem = document.createElement('div');
+                moreItem.className = 'ip-item';
+                moreItem.innerHTML = `
+                    <div style="text-align: center; width: 100%; color: #94a3b8;">
+                        ... and ${ipArray.length - 50} more IPs in storage
+                    </div>
+                `;
+                ipHistoryElement.appendChild(moreItem);
+            }
         }
         
-        // Clear all stored data
-        async function clearAllData() {
-            if (confirm('Are you sure you want to delete all stored IP addresses? This cannot be undone.')) {
-                if (USE_SERVER_STORAGE) {
-                    // For server storage, you would make an API call here
-                    // Example: await fetch('/api/ips', { method: 'DELETE' });
-                    console.log('Server storage would be used in a full implementation');
-                }
-                
+        // ============================================
+        // 5. UTILITY FUNCTIONS
+        // ============================================
+        function clearAllData() {
+            if (confirm('⚠️ DELETE ALL STORED IP ADDRESSES?\n\nThis will permanently delete all IP history and cannot be undone!')) {
                 localStorage.removeItem(STORAGE_KEY);
                 
                 // Reset display
                 totalIpsElement.textContent = '0';
                 uniqueIpsElement.textContent = '0';
-                ipInfoElement.style.display = 'none';
-                emptyHistoryElement.style.display = 'block';
+                currentIpElement.textContent = 'No IP detected';
+                statusMessageElement.textContent = 'Data cleared. Check new IP.';
+                statusMessageElement.className = 'status';
                 
-                // Clear history items
+                // Clear history
                 const existingItems = ipHistoryElement.querySelectorAll('.ip-item');
                 existingItems.forEach(item => item.remove());
+                emptyHistoryElement.style.display = 'block';
                 
-                // Show loading again
-                showLoading();
-                
-                // Re-check current IP to start fresh
+                // Check new IP
                 setTimeout(() => {
-                    loadIPData();
-                }, 500);
+                    checkCurrentIP();
+                }, 1000);
             }
         }
         
-        // UI helper functions
+        function exportData() {
+            const storedIPs = getStoredIPs();
+            if (storedIPs.length === 0) {
+                alert('No IP data to export!');
+                return;
+            }
+            
+            const dataStr = JSON.stringify(storedIPs, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            
+            const url = URL.createObjectURL(dataBlob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `ip-data-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            alert(`Exported ${storedIPs.length} IP addresses to file!`);
+        }
+        
         function showLoading() {
             loadingElement.style.display = 'block';
             ipInfoElement.style.display = 'none';
@@ -536,19 +638,20 @@
             loadingElement.style.display = 'none';
         }
         
-        function showError() {
-            loadingElement.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Failed to retrieve IP. Please check your connection and try again.';
+        function showError(message) {
+            loadingElement.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${message}`;
             loadingElement.style.color = '#f87171';
         }
         
-        // Load existing data on page load
-        window.addEventListener('load', async () => {
-            const storedData = await getStoredIPs();
-            if (storedData.length > 0) {
-                updateHistoryDisplay(storedData);
-                const uniqueIps = new Set(storedData.map(item => item.ip)).size;
-                totalIpsElement.textContent = storedData.length;
-                uniqueIpsElement.textContent = uniqueIps;
+        // ============================================
+        // 6. INITIAL LOAD
+        // ============================================
+        // Auto-check on page load
+        window.addEventListener('load', function() {
+            const storedIPs = getStoredIPs();
+            if (storedIPs.length > 0) {
+                updateStats(storedIPs);
+                updateHistoryDisplay(storedIPs);
             }
         });
     </script>
