@@ -5,10 +5,10 @@
 
     <style>
         body{
-            font-family: Arial, sans-serif;
-            max-width: 500px;
-            margin: auto;
-            padding: 20px;
+            font-family: Arial;
+            max-width:500px;
+            margin:auto;
+            padding:20px;
             background:#f2f2f2;
         }
 
@@ -17,35 +17,24 @@
             padding:25px;
             border-radius:10px;
             text-align:center;
-            box-shadow:0 4px 12px rgba(0,0,0,0.1);
-        }
-
-        h2{
-            margin-bottom:20px;
+            box-shadow:0 4px 12px rgba(0,0,0,.1);
         }
 
         .ip{
-            font-size:30px;
+            font-size:28px;
             font-weight:bold;
             margin:20px 0;
-            background:#f8f9fa;
-            padding:15px;
-            border-radius:8px;
         }
 
         button{
-            padding:12px 20px;
-            font-size:16px;
+            padding:12px;
+            width:100%;
             background:#4285f4;
             color:white;
             border:none;
             border-radius:6px;
+            font-size:16px;
             cursor:pointer;
-            width:100%;
-        }
-
-        button:disabled{
-            background:#ccc;
         }
 
         .status{
@@ -59,7 +48,6 @@
 <body>
 
 <div class="box">
-
     <h2>🔍 IP Checker</h2>
 
     <div id="ip" class="ip">Loading...</div>
@@ -69,40 +57,27 @@
     </button>
 
     <div id="status" class="status"></div>
-
 </div>
-
 
 <script>
 
-/* ===============================
-   YOUR APPS SCRIPT URL (ALREADY SET)
-=============================== */
+/* YOUR WORKING SCRIPT URL */
 const SCRIPT_URL =
 "https://script.google.com/macros/s/AKfycbwuRU0fdhYmpQ25NI2Qyn9-tX2OjOs8NvbL4_L8UrlyY5RTXeLanGvbAJx6jsATzMixAA/exec";
 
 let currentIP = "";
 
 
-/* ===============================
-   Get IP automatically on load
-=============================== */
+/* Get IP (this API allows CORS, safe) */
 window.onload = async () => {
-    try {
-        const r = await fetch("https://api.ipify.org?format=json");
-        const d = await r.json();
-
-        currentIP = d.ip;
-        document.getElementById("ip").innerText = currentIP;
-    } catch {
-        document.getElementById("ip").innerText = "Failed";
-    }
+    const r = await fetch("https://api.ipify.org?format=json");
+    const d = await r.json();
+    currentIP = d.ip;
+    document.getElementById("ip").innerText = currentIP;
 };
 
 
-/* ===============================
-   Main button function
-=============================== */
+/* Main function */
 async function checkIP(){
 
     const status = document.getElementById("status");
@@ -130,20 +105,16 @@ async function checkIP(){
             return;
         }
 
-        /* Get location */
-        const locRes = await fetch(`https://ipapi.co/${currentIP}/json/`);
-        const loc = await locRes.json();
-
-        /* Save to sheet */
+        /* Save only IP (no CORS problems now) */
         await fetch(SCRIPT_URL,{
             method:"POST",
             body: JSON.stringify({
                 action:"addIP",
                 ip: currentIP,
-                city: loc.city,
-                region: loc.region,
-                country: loc.country_name,
-                isp: loc.org
+                city: "",
+                region: "",
+                country: "",
+                isp: ""
             })
         });
 
