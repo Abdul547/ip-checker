@@ -2,6 +2,7 @@
 <html>
 <head>
     <title>IP Checker</title>
+
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -10,338 +11,234 @@
             padding: 20px;
             background: #f0f2f5;
         }
+
         .container {
             background: white;
             padding: 30px;
             border-radius: 10px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
+
         h1 {
             text-align: center;
-            color: #333;
             margin-bottom: 25px;
-            font-size: 26px;
         }
+
         .ip {
-            font-size: 40px;
+            font-size: 38px;
             font-weight: bold;
             text-align: center;
-            margin: 30px 0;
-            color: #2c3e50;
-            font-family: 'Courier New', monospace;
+            margin: 25px 0;
             background: #f8f9fa;
-            padding: 25px;
-            border-radius: 10px;
-            border: 2px solid #e9ecef;
-            word-break: break-all;
+            padding: 20px;
+            border-radius: 8px;
         }
+
         button {
             background: #4285f4;
             color: white;
             border: none;
-            padding: 16px 0;
+            padding: 15px;
             font-size: 18px;
             border-radius: 8px;
             cursor: pointer;
-            display: block;
-            margin: 25px auto;
             width: 100%;
-            max-width: 280px;
-            font-weight: 600;
-            transition: all 0.3s;
         }
-        button:hover {
-            background: #3367d6;
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(66, 133, 244, 0.3);
-        }
-        button:active {
-            transform: translateY(0);
-        }
+
         button:disabled {
             background: #ccc;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
         }
-        .details {
-            background: #f8f9fa;
-            padding: 25px;
-            border-radius: 10px;
-            margin: 25px 0;
-            display: none;
-            border: 1px solid #e9ecef;
-        }
-        .detail-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 14px 0;
-            border-bottom: 1px solid #dee2e6;
-            font-size: 17px;
-        }
-        .detail-row:last-child {
-            border-bottom: none;
-        }
-        .detail-label {
-            color: #5f6368;
-            font-weight: 500;
-        }
-        .detail-value {
-            color: #202124;
-            font-weight: 600;
-            text-align: right;
-            max-width: 250px;
-            word-break: break-word;
-        }
+
         .status {
+            margin-top: 20px;
             padding: 15px;
             border-radius: 8px;
-            font-weight: bold;
             text-align: center;
-            margin: 25px 0;
+            font-weight: bold;
             display: none;
-            font-size: 20px;
-            border: 2px solid;
         }
+
         .unique {
             background: #e6f4ea;
             color: #137333;
-            border-color: #34a853;
         }
+
         .duplicate {
             background: #fce8e6;
             color: #c5221f;
-            border-color: #ea4335;
         }
-        .loading {
-            text-align: center;
-            color: #5f6368;
-            margin: 15px 0;
-            padding: 15px;
+
+        .details {
+            margin-top: 20px;
             display: none;
-            background: #f8f9fa;
-            border-radius: 8px;
+            font-size: 15px;
         }
-        .spinner {
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #4285f4;
-            border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            animation: spin 1s linear infinite;
-            display: inline-block;
-            margin-right: 12px;
-            vertical-align: middle;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        .footer {
-            text-align: center;
-            margin-top: 30px;
-            color: #5f6368;
-            font-size: 14px;
-            padding-top: 20px;
-            border-top: 1px solid #e9ecef;
+
+        .row {
+            margin-bottom: 8px;
         }
     </style>
 </head>
+
 <body>
-    <div class="container">
-        <h1>🔍 IP Address Checker</h1>
-        
-        <div class="ip" id="ip">Loading IP...</div>
-        
-        <div class="loading" id="loading">
-            <div class="spinner"></div> Checking IP and location...
-        </div>
-        
-        <button onclick="checkIP()" id="check-btn">Check IP Details</button>
-        
-        <div id="status" class="status"></div>
-        
-        <div id="details" class="details">
-            <div class="detail-row">
-                <span class="detail-label">City:</span>
-                <span class="detail-value" id="city">-</span>
-            </div>
-            <div class="detail-row">
-                <span class="detail-label">Region:</span>
-                <span class="detail-value" id="region">-</span>
-            </div>
-            <div class="detail-row">
-                <span class="detail-label">Country:</span>
-                <span class="detail-value" id="country">-</span>
-            </div>
-            <div class="detail-row">
-                <span class="detail-label">ISP:</span>
-                <span class="detail-value" id="isp">-</span>
-            </div>
-            <div class="detail-row">
-                <span class="detail-label">Time:</span>
-                <span class="detail-value" id="time">-</span>
-            </div>
-        </div>
-        
-        <div class="footer">
-            <p>IP addresses are stored in Google Sheets</p>
-            <p style="font-size: 12px; color: #9aa0a6; margin-top: 5px;">
-                Click "Check IP Details" to save and view details
-            </p>
-        </div>
+<div class="container">
+
+    <h1>🔍 IP Checker</h1>
+
+    <div id="ip" class="ip">Loading...</div>
+
+    <button onclick="checkIP()" id="checkBtn">
+        Check & Save IP
+    </button>
+
+    <div id="status" class="status"></div>
+
+    <div id="details" class="details">
+        <div class="row">City: <span id="city"></span></div>
+        <div class="row">Region: <span id="region"></span></div>
+        <div class="row">Country: <span id="country"></span></div>
+        <div class="row">ISP: <span id="isp"></span></div>
+        <div class="row">Time: <span id="time"></span></div>
     </div>
 
-    <script>
-        // Your Google Apps Script URL
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwWkyMay8mP8h_4agk2HhrOElimg0czcAYaSyEBl8JHJvBkJhLASRY-kjY5JDZAPIKCFw/exec";
-        
-        let currentIP = '';
-        
-        // Get IP address on page load
-        window.onload = async function() {
-            try {
-                const response = await fetch('https://api.ipify.org?format=json');
-                const data = await response.json();
-                currentIP = data.ip;
-                document.getElementById('ip').textContent = currentIP;
-            } catch (error) {
-                document.getElementById('ip').textContent = 'Failed to load';
-            }
-        };
-        
-        // Main function to check IP
-        async function checkIP() {
-            const button = document.getElementById('check-btn');
-            const loading = document.getElementById('loading');
-            const statusDiv = document.getElementById('status');
-            const detailsDiv = document.getElementById('details');
-            
-            // Reset UI
-            button.disabled = true;
-            loading.style.display = 'block';
-            statusDiv.style.display = 'none';
-            detailsDiv.style.display = 'none';
-            
-            try {
-                // Get location details
-                const location = await getLocationDetails(currentIP);
-                
-                // Update display
-                document.getElementById('city').textContent = location.city;
-                document.getElementById('region').textContent = location.region;
-                document.getElementById('country').textContent = location.country;
-                document.getElementById('isp').textContent = location.isp;
-                document.getElementById('time').textContent = new Date().toLocaleString();
-                
-                // Check if IP exists in Google Sheets
-                const exists = await checkIPExists(currentIP);
-                
-                if (exists) {
-                    // IP already exists - show duplicate
-                    statusDiv.textContent = 'Duplicate IP';
-                    statusDiv.className = 'status duplicate';
-                } else {
-                    // New IP - save to Google Sheets and show unique
-                    statusDiv.textContent = 'Unique IP';
-                    statusDiv.className = 'status unique';
-                    
-                    // Save to Google Sheets
-                    await saveIPToSheets(currentIP, location);
-                }
-                
-                // Show results
-                statusDiv.style.display = 'block';
-                detailsDiv.style.display = 'block';
-                
-            } catch (error) {
-                console.error('Error:', error);
-                statusDiv.textContent = 'Error checking IP';
-                statusDiv.className = 'status duplicate';
-                statusDiv.style.display = 'block';
-            } finally {
-                button.disabled = false;
-                loading.style.display = 'none';
-            }
+</div>
+
+
+<script>
+/* =========================
+   YOUR APPS SCRIPT URL
+========================= */
+const SCRIPT_URL =
+"https://script.google.com/macros/s/AKfycbwWkyMay8mP8h_4agk2HhrOElimg0czcAYaSyEBl8JHJvBkJhLASRY-kjY5JDZAPIKCFw/exec";
+
+
+let currentIP = "";
+
+
+/* =========================
+   GET IP ON LOAD
+========================= */
+window.onload = async () => {
+    try {
+        const r = await fetch("https://api.ipify.org?format=json");
+        const d = await r.json();
+
+        currentIP = d.ip;
+        document.getElementById("ip").textContent = currentIP;
+    }
+    catch {
+        document.getElementById("ip").textContent = "Failed";
+    }
+};
+
+
+/* =========================
+   MAIN BUTTON
+========================= */
+async function checkIP() {
+
+    const btn = document.getElementById("checkBtn");
+    const status = document.getElementById("status");
+    const details = document.getElementById("details");
+
+    btn.disabled = true;
+    status.style.display = "none";
+
+    try {
+
+        const location = await getLocation(currentIP);
+
+        fillDetails(location);
+
+        const exists = await checkIPExists(currentIP);
+
+        if (exists) {
+            showStatus("Duplicate IP", "duplicate");
         }
-        
-        // Get location details for IP
-        async function getLocationDetails(ip) {
-            try {
-                // Try ipapi.co first
-                const response = await fetch(`https://ipapi.co/${ip}/json/`);
-                const data = await response.json();
-                
-                return {
-                    city: data.city || 'Unknown',
-                    region: data.region || 'Unknown',
-                    country: data.country_name || 'Unknown',
-                    isp: data.org || 'Unknown'
-                };
-            } catch (error) {
-                // Fallback to ipinfo.io
-                try {
-                    const fallback = await fetch('https://ipinfo.io/json');
-                    const data = await fallback.json();
-                    
-                    return {
-                        city: data.city || 'Unknown',
-                        region: data.region || 'Unknown',
-                        country: data.country || 'Unknown',
-                        isp: data.org || 'Unknown'
-                    };
-                } catch {
-                    return {
-                        city: 'Unknown',
-                        region: 'Unknown',
-                        country: 'Unknown',
-                        isp: 'Unknown'
-                    };
-                }
-            }
+        else {
+            await saveIP(currentIP, location);
+            showStatus("Unique IP Saved", "unique");
         }
-        
-        // Check if IP exists in Google Sheets
-        async function checkIPExists(ip) {
-            try {
-                const response = await fetch(`${SCRIPT_URL}?action=getIPs`);
-                const data = await response.json();
-                
-                if (data && data.data && Array.isArray(data.data)) {
-                    return data.data.some(item => item.ip === ip);
-                }
-                return false;
-            } catch (error) {
-                console.error('Error checking IP:', error);
-                return false;
-            }
-        }
-        
-        // Save IP to Google Sheets
-        async function saveIPToSheets(ip, location) {
-            try {
-                const params = new URLSearchParams({
-                    action: 'addIP',
-                    ip: ip,
-                    city: location.city,
-                    region: location.region,
-                    country: location.country,
-                    isp: location.isp,
-                    _: Date.now() // Prevent caching
-                });
-                
-                // Send request - don't wait for response
-                fetch(`${SCRIPT_URL}?${params}`, {
-                    method: 'GET',
-                    mode: 'no-cors'
-                });
-                
-                return true;
-            } catch (error) {
-                console.error('Error saving IP:', error);
-                return false;
-            }
-        }
-    </script>
+
+        details.style.display = "block";
+    }
+    catch (e) {
+        showStatus("Error", "duplicate");
+        console.error(e);
+    }
+
+    btn.disabled = false;
+}
+
+
+/* =========================
+   GET LOCATION
+========================= */
+async function getLocation(ip) {
+
+    const r = await fetch(`https://ipapi.co/${ip}/json/`);
+    const d = await r.json();
+
+    return {
+        city: d.city || "Unknown",
+        region: d.region || "Unknown",
+        country: d.country_name || "Unknown",
+        isp: d.org || "Unknown"
+    };
+}
+
+
+/* =========================
+   CHECK DUPLICATE
+========================= */
+async function checkIPExists(ip) {
+
+    const r = await fetch(`${SCRIPT_URL}?action=getIPs`);
+    const d = await r.json();
+
+    if (!d.data) return false;
+
+    return d.data.some(x => x.ip === ip);
+}
+
+
+/* =========================
+   SAVE TO SHEET
+========================= */
+async function saveIP(ip, loc) {
+
+    const params = new URLSearchParams({
+        action: "addIP",
+        ip,
+        city: loc.city,
+        region: loc.region,
+        country: loc.country,
+        isp: loc.isp
+    });
+
+    const r = await fetch(`${SCRIPT_URL}?${params}`);
+    await r.json();
+}
+
+
+/* =========================
+   UI HELPERS
+========================= */
+function showStatus(text, cls) {
+    const s = document.getElementById("status");
+    s.textContent = text;
+    s.className = `status ${cls}`;
+    s.style.display = "block";
+}
+
+function fillDetails(loc) {
+    document.getElementById("city").textContent = loc.city;
+    document.getElementById("region").textContent = loc.region;
+    document.getElementById("country").textContent = loc.country;
+    document.getElementById("isp").textContent = loc.isp;
+    document.getElementById("time").textContent = new Date().toLocaleString();
+}
+</script>
+
 </body>
 </html>
