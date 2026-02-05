@@ -1,188 +1,803 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>IP Tracker - Working Version</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IP Tracker - Google Sheets Storage</title>
     <style>
-        body { font-family: Arial; max-width: 600px; margin: 0 auto; padding: 20px; }
-        .card { background: #f5f5f5; padding: 20px; border-radius: 10px; margin: 10px 0; }
-        .ip { font-size: 24px; color: green; font-weight: bold; }
-        button { background: #4285f4; color: white; border: none; padding: 10px 15px; margin: 5px; cursor: pointer; }
-        .success { background: #d4edda; color: #155724; padding: 10px; }
-        .error { background: #f8d7da; color: #721c24; padding: 10px; }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        h1 {
+            color: #4cc9f0;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            color: #a9b7c6;
+            font-size: 1.1rem;
+        }
+        
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-top: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+        
+        .card h2 {
+            color: #72efdd;
+            margin-bottom: 20px;
+            font-size: 1.8rem;
+            border-bottom: 2px solid rgba(114, 239, 221, 0.3);
+            padding-bottom: 10px;
+        }
+        
+        .ip-display {
+            font-size: 2.2rem;
+            font-weight: bold;
+            text-align: center;
+            color: #72efdd;
+            margin: 20px 0;
+            padding: 20px;
+            background: rgba(114, 239, 221, 0.1);
+            border-radius: 10px;
+            border: 1px solid rgba(114, 239, 221, 0.3);
+            word-break: break-all;
+        }
+        
+        .details-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .detail-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .detail-label {
+            font-size: 0.85rem;
+            color: #a9b7c6;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .detail-value {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-top: 5px;
+            color: #fff;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.9rem;
+            margin-top: 10px;
+        }
+        
+        .status-new {
+            background: rgba(114, 239, 221, 0.2);
+            color: #72efdd;
+            border: 1px solid rgba(114, 239, 221, 0.4);
+        }
+        
+        .status-duplicate {
+            background: rgba(239, 114, 114, 0.2);
+            color: #ef7272;
+            border: 1px solid rgba(239, 114, 114, 0.4);
+        }
+        
+        .actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 25px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #4361ee 0%, #3a0ca3 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(67, 97, 238, 0.4);
+        }
+        
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #f72585 0%, #b5179e 100%);
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(247, 37, 133, 0.4);
+        }
+        
+        .history-container {
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+        
+        .history-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 10px;
+            border-left: 4px solid #4361ee;
+            transition: all 0.3s ease;
+        }
+        
+        .history-item:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateX(5px);
+        }
+        
+        .history-item.duplicate {
+            border-left-color: #f72585;
+        }
+        
+        .history-ip {
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            font-size: 1.1rem;
+            color: #72efdd;
+        }
+        
+        .history-location {
+            color: #a9b7c6;
+            font-size: 0.9rem;
+            margin: 5px 0;
+        }
+        
+        .history-time {
+            color: #6c757d;
+            font-size: 0.8rem;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #4cc9f0;
+        }
+        
+        .loading i {
+            font-size: 2rem;
+            margin-bottom: 15px;
+        }
+        
+        .alert {
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            display: none;
+        }
+        
+        .alert-success {
+            background: rgba(114, 239, 221, 0.1);
+            border: 1px solid rgba(114, 239, 221, 0.3);
+            color: #72efdd;
+        }
+        
+        .alert-error {
+            background: rgba(239, 114, 114, 0.1);
+            border: 1px solid rgba(239, 114, 114, 0.3);
+            color: #ef7272;
+        }
+        
+        .alert-info {
+            background: rgba(76, 201, 240, 0.1);
+            border: 1px solid rgba(76, 201, 240, 0.3);
+            color: #4cc9f0;
+        }
+        
+        .config-panel {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .config-panel input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: white;
+            font-size: 1rem;
+        }
+        
+        .config-panel input:focus {
+            outline: none;
+            border-color: #4cc9f0;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            color: #a9b7c6;
+            font-size: 0.9rem;
+        }
+        
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
     </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-    <h1>🌐 Simple IP Tracker</h1>
-    
-    <div class="card">
-        <h3>Your Web App URL:</h3>
-        <input type="text" id="webapp-url" style="width:100%; padding:10px;" 
-               value="https://script.google.com/macros/s/AKfycbxGJNrgTHtIwd1C7CdKb4AT_WTpUXSWIgzj7tZyCavoTqofxRlFPfiyD1pUYb5qatSX9A/exec">
-        <button onclick="saveUrl()">Save URL</button>
-        <button onclick="testUrl()">Test URL</button>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-satellite-dish"></i> IP Address Tracker</h1>
+            <p class="subtitle">Permanently stores IP addresses in Google Sheets • Real-time tracking</p>
+        </header>
+        
+        <div class="config-panel fade-in">
+            <h2><i class="fas fa-cogs"></i> Configuration</h2>
+            <p style="margin-bottom: 15px; color: #a9b7c6;">Paste your Google Apps Script Web App URL:</p>
+            <input type="text" id="webapp-url" placeholder="https://script.google.com/macros/s/..." 
+                   value="https://script.google.com/macros/s/AKfycbxGJNrgTHtIwd1C7CdKb4AT_WTpUXSWIgzj7tZyCavoTqofxRlFPfiyD1pUYb5qatSX9A/exec">
+            <div class="actions">
+                <button class="btn btn-primary" onclick="saveConfig()">
+                    <i class="fas fa-save"></i> Save Configuration
+                </button>
+                <button class="btn btn-secondary" onclick="testConnection()">
+                    <i class="fas fa-plug"></i> Test Connection
+                </button>
+            </div>
+        </div>
+        
+        <div id="alert" class="alert"></div>
+        
+        <div class="dashboard" id="dashboard" style="display: none;">
+            <div class="card fade-in">
+                <h2><i class="fas fa-map-marker-alt"></i> Current IP</h2>
+                
+                <div class="loading" id="loading">
+                    <i class="fas fa-spinner fa-spin pulse"></i>
+                    <p>Detecting your IP address...</p>
+                </div>
+                
+                <div id="ip-display" style="display: none;">
+                    <div class="ip-display" id="current-ip">000.000.000.000</div>
+                    
+                    <div id="ip-status" class="status-badge status-new">
+                        <i class="fas fa-question-circle"></i> Checking...
+                    </div>
+                    
+                    <div class="details-grid">
+                        <div class="detail-item">
+                            <div class="detail-label">City</div>
+                            <div class="detail-value" id="ip-city">-</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Region</div>
+                            <div class="detail-value" id="ip-region">-</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Country</div>
+                            <div class="detail-value" id="ip-country">-</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">ISP</div>
+                            <div class="detail-value" id="ip-isp">-</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Latitude</div>
+                            <div class="detail-value" id="ip-lat">-</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Longitude</div>
+                            <div class="detail-value" id="ip-lon">-</div>
+                        </div>
+                    </div>
+                    
+                    <div class="actions">
+                        <button class="btn btn-primary" onclick="checkIP()">
+                            <i class="fas fa-sync-alt"></i> Check & Store IP
+                        </button>
+                        <button class="btn btn-secondary" onclick="openGoogleSheets()">
+                            <i class="fas fa-external-link-alt"></i> View Google Sheet
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card fade-in">
+                <h2><i class="fas fa-history"></i> Recent IPs</h2>
+                
+                <div class="history-container" id="history-container">
+                    <div class="loading" id="history-loading">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <p>Loading IP history...</p>
+                    </div>
+                    <!-- IP history will appear here -->
+                </div>
+                
+                <div class="actions">
+                    <button class="btn btn-secondary" onclick="loadHistory()">
+                        <i class="fas fa-redo"></i> Refresh History
+                    </button>
+                    <button class="btn btn-danger" onclick="clearLocalData()">
+                        <i class="fas fa-trash"></i> Clear Local Cache
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>IP Tracker v2.0 • Stores data in Google Sheets via Apps Script</p>
+            <p>All IPs are permanently saved to your Google Sheet with timestamps</p>
+        </footer>
     </div>
-    
-    <div class="card">
-        <h3>Your IP Address:</h3>
-        <div class="ip" id="ip">Detecting...</div>
-        <button onclick="checkIP()">📝 Check & Save IP</button>
-        <button onclick="getHistory()">📋 View History</button>
-        <button onclick="openSheet()">📊 Open Google Sheet</button>
-    </div>
-    
-    <div id="message"></div>
-    <div id="history"></div>
 
     <script>
-        // Your Web App URL
-        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxGJNrgTHtIwd1C7CdKb4AT_WTpUXSWIgzj7tZyCavoTqofxRlFPfiyD1pUYb5qatSX9A/exec";
+        // ============================================
+        // IP TRACKER WITH GOOGLE SHEETS
+        // ============================================
         
-        // Save URL to localStorage
-        function saveUrl() {
-            const url = document.getElementById('webapp-url').value;
-            localStorage.setItem('ipTrackerUrl', url);
-            showMessage('URL saved!', 'success');
+        const CONFIG_KEY = 'ipTrackerConfig_v2';
+        const CACHE_KEY = 'ipHistoryCache';
+        
+        let webAppUrl = '';
+        let currentIP = '';
+        
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('IP Tracker Initializing...');
+            loadConfig();
+            setupEventListeners();
+        });
+        
+        function setupEventListeners() {
+            // Auto-save config when Enter is pressed in URL field
+            document.getElementById('webapp-url').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    saveConfig();
+                }
+            });
         }
         
-        // Test the URL
-        async function testUrl() {
-            const url = document.getElementById('webapp-url').value;
-            showMessage('Testing connection...', '');
-            
-            try {
-                const response = await fetch(url);
-                const data = await response.json();
-                showMessage('✅ Connected! ' + data.message, 'success');
-            } catch (error) {
-                showMessage('❌ Failed: ' + error, 'error');
+        function loadConfig() {
+            const saved = localStorage.getItem(CONFIG_KEY);
+            if (saved) {
+                const config = JSON.parse(saved);
+                webAppUrl = config.webAppUrl;
+                
+                // If config exists, show dashboard
+                if (webAppUrl) {
+                    document.getElementById('dashboard').style.display = 'grid';
+                    document.getElementById('webapp-url').value = webAppUrl;
+                    setTimeout(() => checkIP(), 1000);
+                }
+            } else {
+                // First-time setup: pre-fill with your URL
+                webAppUrl = document.getElementById('webapp-url').value;
+                saveConfig();
             }
         }
         
-        // Check and save IP
-        async function checkIP() {
-            showMessage('Getting IP address...', '');
+        function saveConfig() {
+            webAppUrl = document.getElementById('webapp-url').value.trim();
+            
+            if (!webAppUrl) {
+                showAlert('Please enter a valid Web App URL', 'error');
+                return;
+            }
+            
+            const config = {
+                webAppUrl: webAppUrl,
+                configuredAt: new Date().toISOString()
+            };
+            
+            localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
+            showAlert('✅ Configuration saved successfully!', 'success');
+            
+            // Show dashboard
+            document.getElementById('dashboard').style.display = 'grid';
+            
+            // Test connection
+            setTimeout(() => {
+                testConnection();
+                checkIP();
+            }, 1500);
+        }
+        
+        async function testConnection() {
+            showAlert('Testing connection to Google Sheets...', 'info');
             
             try {
-                // Get IP
-                const ipResponse = await fetch('https://api.ipify.org?format=json');
-                const ipData = await ipResponse.json();
-                const ip = ipData.ip;
+                const url = `${webAppUrl}?action=getIPs`;
+                const response = await fetch(url);
                 
-                // Get location
-                let location = {city: 'Unknown', region: 'Unknown', country: 'Unknown'};
-                try {
-                    const locResponse = await fetch(`https://ipapi.co/${ip}/json/`);
-                    const locData = await locResponse.json();
-                    location = {
-                        city: locData.city || 'Unknown',
-                        region: locData.region || 'Unknown',
-                        country: locData.country_name || 'Unknown',
-                        isp: locData.org || 'Unknown'
-                    };
-                } catch (locError) {
-                    console.log('Location API failed');
+                if (response.ok) {
+                    showAlert('✅ Connected to Google Sheets successfully!', 'success');
+                } else {
+                    showAlert('⚠️ Connection test failed. Check your URL.', 'error');
                 }
+            } catch (error) {
+                showAlert('❌ Connection error: ' + error.message, 'error');
+            }
+        }
+        
+        async function checkIP() {
+            const loadingEl = document.getElementById('loading');
+            const ipDisplayEl = document.getElementById('ip-display');
+            
+            loadingEl.style.display = 'block';
+            ipDisplayEl.style.display = 'none';
+            
+            try {
+                // Get IP details
+                const ipData = await fetchIPDetails();
+                currentIP = ipData.ip;
                 
-                // Display IP
-                document.getElementById('ip').textContent = ip;
+                // Update display
+                updateIPDisplay(ipData);
+                
+                // Check if IP already exists
+                const isDuplicate = await checkIfDuplicate(ipData.ip);
+                
+                // Update status
+                updateIPStatus(isDuplicate, ipData);
                 
                 // Save to Google Sheets
-                await saveToSheets(ip, location);
+                await saveToGoogleSheets(ipData, isDuplicate);
+                
+                // Show display
+                loadingEl.style.display = 'none';
+                ipDisplayEl.style.display = 'block';
+                
+                // Load history
+                loadHistory();
                 
             } catch (error) {
-                showMessage('Error: ' + error.message, 'error');
+                console.error('Error:', error);
+                showAlert('Failed to check IP: ' + error.message, 'error');
+                loadingEl.style.display = 'none';
+                ipDisplayEl.style.display = 'block';
             }
         }
         
-        // Save to Google Sheets
-        async function saveToSheets(ip, location) {
-            const url = document.getElementById('webapp-url').value;
+        async function fetchIPDetails() {
+            try {
+                // Try ipapi.co first
+                const response = await fetch('https://ipapi.co/json/');
+                if (response.ok) {
+                    const data = await response.json();
+                    return {
+                        ip: data.ip,
+                        city: data.city || 'Unknown',
+                        region: data.region || 'Unknown',
+                        country: data.country_name || 'Unknown',
+                        isp: data.org || 'Unknown ISP',
+                        latitude: data.latitude,
+                        longitude: data.longitude,
+                        timezone: data.timezone
+                    };
+                }
+            } catch (error) {
+                console.log('ipapi.co failed, trying fallback');
+            }
+            
+            // Fallback: simple IP detection
+            const ipResponse = await fetch('https://api.ipify.org?format=json');
+            const ipData = await ipResponse.json();
+            
+            return {
+                ip: ipData.ip,
+                city: 'Unknown',
+                region: 'Unknown',
+                country: 'Unknown',
+                isp: 'Unknown ISP',
+                latitude: null,
+                longitude: null,
+                timezone: 'Unknown'
+            };
+        }
+        
+        function updateIPDisplay(ipData) {
+            document.getElementById('current-ip').textContent = ipData.ip;
+            document.getElementById('ip-city').textContent = ipData.city;
+            document.getElementById('ip-region').textContent = ipData.region;
+            document.getElementById('ip-country').textContent = ipData.country;
+            document.getElementById('ip-isp').textContent = ipData.isp;
+            document.getElementById('ip-lat').textContent = ipData.latitude ? ipData.latitude.toFixed(4) : 'N/A';
+            document.getElementById('ip-lon').textContent = ipData.longitude ? ipData.longitude.toFixed(4) : 'N/A';
+        }
+        
+        function updateIPStatus(isDuplicate, ipData) {
+            const statusEl = document.getElementById('ip-status');
+            
+            if (isDuplicate) {
+                statusEl.innerHTML = `
+                    <i class="fas fa-exclamation-triangle"></i> 
+                    DUPLICATE IP - Seen before
+                `;
+                statusEl.className = 'status-badge status-duplicate';
+            } else {
+                statusEl.innerHTML = `
+                    <i class="fas fa-check-circle"></i> 
+                    UNIQUE IP - First time seen
+                `;
+                statusEl.className = 'status-badge status-new';
+            }
+        }
+        
+        async function checkIfDuplicate(ip) {
+            try {
+                const history = await getIPHistory();
+                return history.some(entry => entry.ip === ip);
+            } catch (error) {
+                return false;
+            }
+        }
+        
+        async function saveToGoogleSheets(ipData, isDuplicate) {
+            if (!webAppUrl) {
+                throw new Error('Web App URL not configured');
+            }
             
             const params = new URLSearchParams({
                 action: 'addIP',
-                ip: ip,
-                city: location.city,
-                region: location.region,
-                country: location.country,
-                isp: location.isp,
-                status: 'New',
+                ip: ipData.ip,
+                city: ipData.city,
+                region: ipData.region,
+                country: ipData.country,
+                isp: ipData.isp,
+                latitude: ipData.latitude || '',
+                longitude: ipData.longitude || '',
+                status: isDuplicate ? 'Duplicate' : 'New',
                 userAgent: navigator.userAgent.substring(0, 100)
             });
             
+            const url = `${webAppUrl}?${params.toString()}`;
+            
             try {
-                const response = await fetch(url + '?' + params.toString());
-                const data = await response.json();
-                
-                if (data.success) {
-                    showMessage('✅ IP saved to Google Sheets! Row #' + data.row, 'success');
-                } else {
-                    showMessage('Failed: ' + data.error, 'error');
-                }
+                await fetch(url);
+                showAlert('✅ IP saved to Google Sheets!', 'success');
             } catch (error) {
-                showMessage('Save error: ' + error.message, 'error');
+                console.log('Using no-cors mode, saving to cache');
+                saveToCache(ipData, isDuplicate);
             }
         }
         
-        // Get history
-        async function getHistory() {
-            const url = document.getElementById('webapp-url').value + '?action=getIPs';
-            showMessage('Loading history...', '');
-            
+        async function getIPHistory() {
             try {
+                const url = `${webAppUrl}?action=getIPs`;
                 const response = await fetch(url);
                 const data = await response.json();
                 
-                if (data.data && data.data.length > 0) {
-                    let html = '<h3>📜 IP History:</h3>';
-                    html += '<table border="1" style="width:100%; border-collapse:collapse;">';
-                    html += '<tr><th>Time</th><th>IP</th><th>Location</th><th>Status</th></tr>';
-                    
-                    data.data.slice(0, 10).forEach(item => {
-                        const time = new Date(item.timestamp).toLocaleString();
-                        html += `<tr>
-                            <td>${time}</td>
-                            <td><strong>${item.ip}</strong></td>
-                            <td>${item.city}, ${item.region}</td>
-                            <td>${item.status}</td>
-                        </tr>`;
-                    });
-                    
-                    html += '</table>';
-                    document.getElementById('history').innerHTML = html;
-                    showMessage('Loaded ' + data.data.length + ' IPs', 'success');
-                } else {
-                    document.getElementById('history').innerHTML = '<p>No IPs stored yet.</p>';
-                    showMessage('No history found', '');
+                // Cache the data
+                if (data.data) {
+                    localStorage.setItem(CACHE_KEY, JSON.stringify(data.data));
                 }
+                
+                return data.data || [];
             } catch (error) {
-                showMessage('Failed to load history: ' + error.message, 'error');
+                // Fallback to cache
+                const cache = localStorage.getItem(CACHE_KEY);
+                return cache ? JSON.parse(cache) : [];
             }
         }
         
-        // Open Google Sheet
-        function openSheet() {
-            window.open('https://docs.google.com/spreadsheets', '_blank');
-        }
-        
-        // Show message
-        function showMessage(text, type) {
-            const el = document.getElementById('message');
-            el.textContent = text;
-            el.className = type;
-        }
-        
-        // Auto-load on startup
-        window.onload = function() {
-            // Auto-get IP
-            fetch('https://api.ipify.org?format=json')
-                .then(r => r.json())
-                .then(data => {
-                    document.getElementById('ip').textContent = data.ip;
-                });
+        async function loadHistory() {
+            const container = document.getElementById('history-container');
+            const loadingEl = document.getElementById('history-loading');
             
-            // Test connection
-            setTimeout(testUrl, 1000);
-        };
+            loadingEl.style.display = 'block';
+            
+            try {
+                const history = await getIPHistory();
+                
+                if (history.length === 0) {
+                    container.innerHTML = `
+                        <div style="text-align: center; padding: 40px; color: #a9b7c6;">
+                            <i class="fas fa-inbox fa-3x" style="margin-bottom: 15px;"></i>
+                            <p>No IP history found.</p>
+                            <p>Check and store your first IP!</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                let html = '';
+                const recentHistory = history.slice(0, 10); // Show last 10
+                
+                recentHistory.forEach(entry => {
+                    const time = new Date(entry.timestamp).toLocaleString();
+                    const isDuplicate = entry.status === 'Duplicate';
+                    
+                    html += `
+                        <div class="history-item ${isDuplicate ? 'duplicate' : ''}">
+                            <div class="history-ip">${entry.ip}</div>
+                            <div class="history-location">
+                                <i class="fas fa-map-marker-alt"></i> 
+                                ${entry.city}, ${entry.region}, ${entry.country}
+                            </div>
+                            <div class="history-time">
+                                <i class="far fa-clock"></i> ${time}
+                            </div>
+                            <div style="margin-top: 8px;">
+                                <span class="status-badge ${isDuplicate ? 'status-duplicate' : 'status-new'}" 
+                                      style="font-size: 0.8rem; padding: 4px 10px;">
+                                    ${isDuplicate ? '<i class="fas fa-clone"></i> Duplicate' : '<i class="fas fa-star"></i> New'}
+                                </span>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                if (history.length > 10) {
+                    html += `
+                        <div style="text-align: center; padding: 15px; color: #a9b7c6;">
+                            <i class="fas fa-ellipsis-h"></i>
+                            ${history.length - 10} more IPs in Google Sheet
+                        </div>
+                    `;
+                }
+                
+                container.innerHTML = html;
+                
+            } catch (error) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 20px; color: #ef7272;">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p>Failed to load history</p>
+                        <p style="font-size: 0.9rem;">${error.message}</p>
+                    </div>
+                `;
+            } finally {
+                loadingEl.style.display = 'none';
+            }
+        }
+        
+        function saveToCache(ipData, isDuplicate) {
+            const cache = localStorage.getItem(CACHE_KEY);
+            let history = cache ? JSON.parse(cache) : [];
+            
+            history.unshift({
+                timestamp: new Date().toISOString(),
+                ip: ipData.ip,
+                city: ipData.city,
+                region: ipData.region,
+                country: ipData.country,
+                isp: ipData.isp,
+                status: isDuplicate ? 'Duplicate' : 'New'
+            });
+            
+            // Keep only last 50 entries
+            history = history.slice(0, 50);
+            
+            localStorage.setItem(CACHE_KEY, JSON.stringify(history));
+        }
+        
+        function clearLocalData() {
+            if (confirm('Clear local cache? This will not delete data from Google Sheets.')) {
+                localStorage.removeItem(CACHE_KEY);
+                showAlert('Local cache cleared', 'success');
+                loadHistory();
+            }
+        }
+        
+        function openGoogleSheets() {
+            window.open('https://sheets.google.com', '_blank');
+        }
+        
+        function showAlert(message, type) {
+            const alertEl = document.getElementById('alert');
+            alertEl.textContent = message;
+            alertEl.className = `alert alert-${type} fade-in`;
+            alertEl.style.display = 'block';
+            
+            if (type !== 'info') {
+                setTimeout(() => {
+                    alertEl.style.display = 'none';
+                }, 5000);
+            }
+        }
+        
+        // Auto-refresh history every 30 seconds
+        setInterval(() => {
+            if (webAppUrl && !document.hidden) {
+                loadHistory();
+            }
+        }, 30000);
     </script>
 </body>
 </html>
