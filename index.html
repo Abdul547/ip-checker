@@ -4,240 +4,160 @@
     <title>IP Checker</title>
 
     <style>
-        body {
+        body{
             font-family: Arial, sans-serif;
             max-width: 500px;
-            margin: 0 auto;
+            margin: auto;
             padding: 20px;
-            background: #f0f2f5;
+            background:#f2f2f2;
         }
 
-        .container {
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        .box{
+            background:white;
+            padding:25px;
+            border-radius:10px;
+            text-align:center;
+            box-shadow:0 4px 12px rgba(0,0,0,0.1);
         }
 
-        h1 {
-            text-align: center;
-            margin-bottom: 25px;
+        h2{
+            margin-bottom:20px;
         }
 
-        .ip {
-            font-size: 38px;
-            font-weight: bold;
-            text-align: center;
-            margin: 25px 0;
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 8px;
+        .ip{
+            font-size:30px;
+            font-weight:bold;
+            margin:20px 0;
+            background:#f8f9fa;
+            padding:15px;
+            border-radius:8px;
         }
 
-        button {
-            background: #4285f4;
-            color: white;
-            border: none;
-            padding: 15px;
-            font-size: 18px;
-            border-radius: 8px;
-            cursor: pointer;
-            width: 100%;
+        button{
+            padding:12px 20px;
+            font-size:16px;
+            background:#4285f4;
+            color:white;
+            border:none;
+            border-radius:6px;
+            cursor:pointer;
+            width:100%;
         }
 
-        button:disabled {
-            background: #ccc;
+        button:disabled{
+            background:#ccc;
         }
 
-        .status {
-            margin-top: 20px;
-            padding: 15px;
-            border-radius: 8px;
-            text-align: center;
-            font-weight: bold;
-            display: none;
-        }
-
-        .unique {
-            background: #e6f4ea;
-            color: #137333;
-        }
-
-        .duplicate {
-            background: #fce8e6;
-            color: #c5221f;
-        }
-
-        .details {
-            margin-top: 20px;
-            display: none;
-            font-size: 15px;
-        }
-
-        .row {
-            margin-bottom: 8px;
+        .status{
+            margin-top:15px;
+            font-weight:bold;
+            font-size:18px;
         }
     </style>
 </head>
 
 <body>
-<div class="container">
 
-    <h1>🔍 IP Checker</h1>
+<div class="box">
+
+    <h2>🔍 IP Checker</h2>
 
     <div id="ip" class="ip">Loading...</div>
 
-    <button onclick="checkIP()" id="checkBtn">
+    <button onclick="checkIP()" id="btn">
         Check & Save IP
     </button>
 
     <div id="status" class="status"></div>
 
-    <div id="details" class="details">
-        <div class="row">City: <span id="city"></span></div>
-        <div class="row">Region: <span id="region"></span></div>
-        <div class="row">Country: <span id="country"></span></div>
-        <div class="row">ISP: <span id="isp"></span></div>
-        <div class="row">Time: <span id="time"></span></div>
-    </div>
-
 </div>
 
 
 <script>
-/* =========================
-   YOUR APPS SCRIPT URL
-========================= */
-const SCRIPT_URL =
-"https://script.google.com/macros/s/AKfycbwWkyMay8mP8h_4agk2HhrOElimg0czcAYaSyEBl8JHJvBkJhLASRY-kjY5JDZAPIKCFw/exec";
 
+/* ===============================
+   YOUR APPS SCRIPT URL (ALREADY SET)
+=============================== */
+const SCRIPT_URL =
+"https://script.google.com/macros/s/AKfycbwuRU0fdhYmpQ25NI2Qyn9-tX2OjOs8NvbL4_L8UrlyY5RTXeLanGvbAJx6jsATzMixAA/exec";
 
 let currentIP = "";
 
 
-/* =========================
-   GET IP ON LOAD
-========================= */
+/* ===============================
+   Get IP automatically on load
+=============================== */
 window.onload = async () => {
     try {
         const r = await fetch("https://api.ipify.org?format=json");
         const d = await r.json();
 
         currentIP = d.ip;
-        document.getElementById("ip").textContent = currentIP;
-    }
-    catch {
-        document.getElementById("ip").textContent = "Failed";
+        document.getElementById("ip").innerText = currentIP;
+    } catch {
+        document.getElementById("ip").innerText = "Failed";
     }
 };
 
 
-/* =========================
-   MAIN BUTTON
-========================= */
-async function checkIP() {
+/* ===============================
+   Main button function
+=============================== */
+async function checkIP(){
 
-    const btn = document.getElementById("checkBtn");
     const status = document.getElementById("status");
-    const details = document.getElementById("details");
+    const btn = document.getElementById("btn");
 
     btn.disabled = true;
-    status.style.display = "none";
+    status.innerText = "Checking...";
 
-    try {
+    try{
 
-        const location = await getLocation(currentIP);
+        /* Check duplicate */
+        let res = await fetch(SCRIPT_URL,{
+            method:"POST",
+            body: JSON.stringify({
+                action:"checkIP",
+                ip: currentIP
+            })
+        });
 
-        fillDetails(location);
+        let data = await res.json();
 
-        const exists = await checkIPExists(currentIP);
-
-        if (exists) {
-            showStatus("Duplicate IP", "duplicate");
+        if(data.exists){
+            status.innerText = "❌ Duplicate IP";
+            btn.disabled = false;
+            return;
         }
-        else {
-            await saveIP(currentIP, location);
-            showStatus("Unique IP Saved", "unique");
-        }
 
-        details.style.display = "block";
+        /* Get location */
+        const locRes = await fetch(`https://ipapi.co/${currentIP}/json/`);
+        const loc = await locRes.json();
+
+        /* Save to sheet */
+        await fetch(SCRIPT_URL,{
+            method:"POST",
+            body: JSON.stringify({
+                action:"addIP",
+                ip: currentIP,
+                city: loc.city,
+                region: loc.region,
+                country: loc.country_name,
+                isp: loc.org
+            })
+        });
+
+        status.innerText = "✅ Unique IP Saved";
+
     }
-    catch (e) {
-        showStatus("Error", "duplicate");
-        console.error(e);
+    catch(e){
+        console.log(e);
+        status.innerText = "⚠️ Error";
     }
 
     btn.disabled = false;
 }
 
-
-/* =========================
-   GET LOCATION
-========================= */
-async function getLocation(ip) {
-
-    const r = await fetch(`https://ipapi.co/${ip}/json/`);
-    const d = await r.json();
-
-    return {
-        city: d.city || "Unknown",
-        region: d.region || "Unknown",
-        country: d.country_name || "Unknown",
-        isp: d.org || "Unknown"
-    };
-}
-
-
-/* =========================
-   CHECK DUPLICATE
-========================= */
-async function checkIPExists(ip) {
-
-    const r = await fetch(`${SCRIPT_URL}?action=getIPs`);
-    const d = await r.json();
-
-    if (!d.data) return false;
-
-    return d.data.some(x => x.ip === ip);
-}
-
-
-/* =========================
-   SAVE TO SHEET
-========================= */
-async function saveIP(ip, loc) {
-
-    const params = new URLSearchParams({
-        action: "addIP",
-        ip,
-        city: loc.city,
-        region: loc.region,
-        country: loc.country,
-        isp: loc.isp
-    });
-
-    const r = await fetch(`${SCRIPT_URL}?${params}`);
-    await r.json();
-}
-
-
-/* =========================
-   UI HELPERS
-========================= */
-function showStatus(text, cls) {
-    const s = document.getElementById("status");
-    s.textContent = text;
-    s.className = `status ${cls}`;
-    s.style.display = "block";
-}
-
-function fillDetails(loc) {
-    document.getElementById("city").textContent = loc.city;
-    document.getElementById("region").textContent = loc.region;
-    document.getElementById("country").textContent = loc.country;
-    document.getElementById("isp").textContent = loc.isp;
-    document.getElementById("time").textContent = new Date().toLocaleString();
-}
 </script>
 
 </body>
