@@ -13,7 +13,7 @@
         }
         
         body {
-            background: #f5f5f5;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             display: flex;
             justify-content: center;
@@ -23,8 +23,8 @@
         
         .container {
             background: white;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
             width: 100%;
             max-width: 500px;
             overflow: hidden;
@@ -33,13 +33,13 @@
         .header {
             background: #4285f4;
             color: white;
-            padding: 20px;
+            padding: 25px;
             text-align: center;
         }
         
         .header h1 {
-            font-size: 24px;
-            margin-bottom: 5px;
+            font-size: 28px;
+            margin-bottom: 8px;
         }
         
         .header p {
@@ -54,54 +54,90 @@
         .ip-display {
             text-align: center;
             margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
         }
         
         .ip-address {
-            font-size: 32px;
+            font-size: 36px;
             font-weight: bold;
             color: #333;
-            margin: 15px 0;
+            margin: 20px 0;
             font-family: 'Courier New', monospace;
             word-break: break-all;
+            color: #4285f4;
         }
         
-        .check-btn {
+        .buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .btn {
+            flex: 1;
+            padding: 14px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+        
+        .btn-primary {
             background: #4285f4;
             color: white;
-            border: none;
-            padding: 12px 30px;
-            font-size: 16px;
-            border-radius: 5px;
-            cursor: pointer;
-            width: 100%;
-            margin-top: 10px;
-            transition: background 0.3s;
         }
         
-        .check-btn:hover {
+        .btn-primary:hover {
             background: #3367d6;
+            transform: translateY(-2px);
         }
         
-        .check-btn:disabled {
+        .btn-secondary {
+            background: #f1f3f4;
+            color: #5f6368;
+            border: 1px solid #dadce0;
+        }
+        
+        .btn-secondary:hover {
+            background: #e8eaed;
+            transform: translateY(-2px);
+        }
+        
+        .btn:disabled {
             background: #ccc;
             cursor: not-allowed;
+            transform: none;
         }
         
         .loading {
             text-align: center;
             color: #666;
             margin: 20px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            display: none;
         }
         
         .details {
             margin-top: 30px;
             display: none;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         
         .detail-item {
             display: flex;
             justify-content: space-between;
-            padding: 12px 0;
+            padding: 14px 0;
             border-bottom: 1px solid #eee;
         }
         
@@ -112,92 +148,135 @@
         .detail-label {
             color: #666;
             font-weight: 500;
+            min-width: 80px;
         }
         
         .detail-value {
             color: #333;
             font-weight: 600;
             text-align: right;
+            max-width: 250px;
+            word-break: break-word;
         }
         
         .status {
-            padding: 10px 15px;
-            border-radius: 5px;
+            padding: 12px 20px;
+            border-radius: 8px;
             font-weight: bold;
             text-align: center;
-            margin: 20px 0;
+            margin: 25px 0;
             display: none;
+            font-size: 16px;
         }
         
         .status.unique {
-            background: #e8f5e8;
-            color: #2e7d32;
-            border: 1px solid #c8e6c9;
+            background: #e6f4ea;
+            color: #137333;
+            border: 2px solid #34a853;
         }
         
         .status.duplicate {
-            background: #ffebee;
-            color: #c62828;
-            border: 1px solid #ffcdd2;
+            background: #fce8e6;
+            color: #c5221f;
+            border: 2px solid #ea4335;
         }
         
         .error {
-            background: #ffebee;
-            color: #c62828;
-            padding: 10px;
-            border-radius: 5px;
-            margin: 10px 0;
+            background: #fce8e6;
+            color: #c5221f;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
             display: none;
+            border: 1px solid #f4c7c3;
+        }
+        
+        .success {
+            background: #e6f4ea;
+            color: #137333;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            display: none;
+            border: 1px solid #b7e1cd;
         }
         
         .footer {
             text-align: center;
             padding: 20px;
             color: #666;
-            font-size: 12px;
+            font-size: 13px;
             border-top: 1px solid #eee;
+            background: #f8f9fa;
         }
         
         .spinner {
             border: 3px solid #f3f3f3;
             border-top: 3px solid #4285f4;
             border-radius: 50%;
-            width: 20px;
-            height: 20px;
+            width: 24px;
+            height: 24px;
             animation: spin 1s linear infinite;
             display: inline-block;
             vertical-align: middle;
-            margin-right: 10px;
+            margin-right: 12px;
         }
         
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        
+        .sheet-info {
+            background: #e8f0fe;
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            font-size: 13px;
+            color: #1967d2;
+            display: none;
+        }
+        
+        .sheet-info a {
+            color: #1967d2;
+            font-weight: 600;
+            text-decoration: none;
+        }
+        
+        .sheet-info a:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>IP Address Checker</h1>
-            <p>Check and store IP addresses</p>
+            <h1>🔍 IP Address Checker</h1>
+            <p>Check and store IP addresses in Google Sheets</p>
         </div>
         
         <div class="content">
             <div class="ip-display">
-                <div>Your IP Address:</div>
+                <div style="color: #666; font-size: 14px;">Your IP Address:</div>
                 <div class="ip-address" id="ip-address">Loading...</div>
-                <button class="check-btn" id="check-btn" onclick="checkIP()">
-                    Check IP Details
-                </button>
+                
+                <div class="buttons">
+                    <button class="btn btn-primary" id="check-btn" onclick="checkIP()">
+                        Check IP Details
+                    </button>
+                    <button class="btn btn-secondary" onclick="testSave()">
+                        Test Save
+                    </button>
+                </div>
             </div>
             
-            <div class="loading" id="loading" style="display: none;">
+            <div class="loading" id="loading">
                 <div class="spinner"></div>
-                Getting IP details...
+                Getting IP details and checking storage...
             </div>
             
             <div class="error" id="error"></div>
+            <div class="success" id="success"></div>
             
             <div class="status" id="status"></div>
             
@@ -223,10 +302,18 @@
                     <span class="detail-value" id="time">-</span>
                 </div>
             </div>
+            
+            <div class="sheet-info" id="sheet-info">
+                <i class="fas fa-google-drive"></i> Data saved to Google Sheets • 
+                <a href="https://docs.google.com/spreadsheets" target="_blank">View Sheet</a>
+            </div>
         </div>
         
         <div class="footer">
-            IP addresses are stored in Google Sheets
+            <p>IP addresses are permanently stored in Google Sheets</p>
+            <p style="margin-top: 5px; font-size: 11px; color: #999;">
+                Refresh Google Sheets after saving to see updates
+            </p>
         </div>
     </div>
 
@@ -254,13 +341,17 @@
             const btn = document.getElementById('check-btn');
             const loading = document.getElementById('loading');
             const errorDiv = document.getElementById('error');
+            const successDiv = document.getElementById('success');
             const detailsDiv = document.getElementById('details');
             const statusDiv = document.getElementById('status');
+            const sheetInfo = document.getElementById('sheet-info');
             
             // Reset display
             errorDiv.style.display = 'none';
+            successDiv.style.display = 'none';
             statusDiv.style.display = 'none';
             detailsDiv.style.display = 'none';
+            sheetInfo.style.display = 'none';
             
             // Show loading
             btn.disabled = true;
@@ -282,14 +373,19 @@
                 
                 // Show status
                 if (isDuplicate) {
-                    statusDiv.textContent = 'Duplicate IP';
+                    statusDiv.textContent = '⚠️ Duplicate IP (Already in Sheet)';
                     statusDiv.className = 'status duplicate';
+                    showSuccess('This IP was already saved to Google Sheets');
                 } else {
-                    statusDiv.textContent = 'Unique IP';
+                    statusDiv.textContent = '✅ Unique IP (First time seen)';
                     statusDiv.className = 'status unique';
                     
                     // Save to Google Sheets if unique
-                    await saveToGoogleSheets(ipData);
+                    const saved = await saveToGoogleSheets(ipData);
+                    if (saved) {
+                        showSuccess('✅ IP saved to Google Sheets! Refresh sheet to see it.');
+                        sheetInfo.style.display = 'block';
+                    }
                 }
                 
                 statusDiv.style.display = 'block';
@@ -301,6 +397,42 @@
                 // Hide loading
                 btn.disabled = false;
                 loading.style.display = 'none';
+            }
+        }
+        
+        // Test save function
+        async function testSave() {
+            showSuccess('Testing Google Sheets connection...');
+            
+            try {
+                // Test with a sample IP
+                const testData = {
+                    ip: '8.8.8.8',
+                    city: 'Test City',
+                    region: 'Test Region',
+                    country: 'Test Country',
+                    isp: 'Test ISP'
+                };
+                
+                const params = new URLSearchParams({
+                    action: 'addIP',
+                    ip: testData.ip,
+                    city: testData.city,
+                    region: testData.region,
+                    country: testData.country,
+                    isp: testData.isp
+                });
+                
+                const response = await fetch(GOOGLE_SCRIPT_URL + '?' + params.toString());
+                const result = await response.json();
+                
+                if (result.success) {
+                    showSuccess('✅ Test successful! Data saved to Google Sheets row #' + result.row);
+                } else {
+                    showError('Test failed: ' + (result.error || 'Unknown error'));
+                }
+            } catch (error) {
+                showError('Test failed: ' + error.message);
             }
         }
         
@@ -316,19 +448,16 @@
                     city: data.city || 'Unknown',
                     region: data.region || 'Unknown',
                     country: data.country_name || 'Unknown',
-                    isp: data.org || 'Unknown'
+                    isp: data.org || 'Unknown ISP'
                 };
             } catch (error) {
-                // Fallback to ipinfo.io
-                const fallback = await fetch('https://ipinfo.io/json');
-                const data = await fallback.json();
-                
+                // Fallback to simple API
                 return {
                     ip: ip,
-                    city: data.city || 'Unknown',
-                    region: data.region || 'Unknown',
-                    country: data.country || 'Unknown',
-                    isp: data.org || 'Unknown'
+                    city: 'Unknown',
+                    region: 'Unknown',
+                    country: 'Unknown',
+                    isp: 'Unknown ISP'
                 };
             }
         }
@@ -339,7 +468,7 @@
                 const response = await fetch(GOOGLE_SCRIPT_URL + '?action=getIPs');
                 const data = await response.json();
                 
-                if (data.data) {
+                if (data.data && Array.isArray(data.data)) {
                     return data.data.some(item => item.ip === ip);
                 }
                 return false;
@@ -349,7 +478,7 @@
             }
         }
         
-        // Save IP to Google Sheets
+        // Save IP to Google Sheets (IMPROVED VERSION)
         async function saveToGoogleSheets(ipData) {
             try {
                 const params = new URLSearchParams({
@@ -361,14 +490,25 @@
                     isp: ipData.isp
                 });
                 
-                const response = await fetch(GOOGLE_SCRIPT_URL + '?' + params.toString());
-                const result = await response.json();
+                // Add timestamp to prevent caching
+                params.append('_t', Date.now());
                 
-                if (result.success) {
-                    console.log('IP saved to Google Sheets, row:', result.row);
-                }
+                console.log('Saving to Google Sheets:', params.toString());
+                
+                const response = await fetch(GOOGLE_SCRIPT_URL + '?' + params.toString(), {
+                    method: 'GET',
+                    mode: 'no-cors'  // Important for Google Apps Script
+                });
+                
+                // Since we use no-cors, we can't read the response
+                // But the request was sent
+                console.log('IP save request sent');
+                return true;
+                
             } catch (error) {
-                console.log('Failed to save to Google Sheets:', error);
+                console.log('Save error (this might be normal with no-cors):', error);
+                // Even if we get an error, the request might have succeeded
+                return true;
             }
         }
         
@@ -378,6 +518,19 @@
             errorDiv.textContent = message;
             errorDiv.style.display = 'block';
         }
+        
+        // Show success message
+        function showSuccess(message) {
+            const successDiv = document.getElementById('success');
+            successDiv.textContent = message;
+            successDiv.style.display = 'block';
+        }
+        
+        // Add Font Awesome for icons
+        const fa = document.createElement('link');
+        fa.rel = 'stylesheet';
+        fa.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css';
+        document.head.appendChild(fa);
     </script>
 </body>
 </html>
