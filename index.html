@@ -41,6 +41,7 @@
             margin-top:15px;
             font-weight:bold;
             font-size:18px;
+            line-height:1.6;
         }
     </style>
 </head>
@@ -60,15 +61,12 @@
 </div>
 
 <script>
-
-/* YOUR WORKING SCRIPT URL */
 const SCRIPT_URL =
 "https://script.google.com/macros/s/AKfycbwuRU0fdhYmpQ25NI2Qyn9-tX2OjOs8NvbL4_L8UrlyY5RTXeLanGvbAJx6jsATzMixAA/exec";
 
 let currentIP = "";
 
-
-/* Get IP (this API allows CORS, safe) */
+/* Get IP */
 window.onload = async () => {
     const r = await fetch("https://api.ipify.org?format=json");
     const d = await r.json();
@@ -76,8 +74,7 @@ window.onload = async () => {
     document.getElementById("ip").innerText = currentIP;
 };
 
-
-/* Main function */
+/* Main */
 async function checkIP(){
 
     const status = document.getElementById("status");
@@ -87,9 +84,17 @@ async function checkIP(){
     status.innerText = "Checking...";
 
     try{
+        /* Get IP details */
+        const geoRes = await fetch(`https://ipapi.co/${currentIP}/json/`);
+        const geo = await geoRes.json();
+
+        const city = geo.city || "Unknown";
+        const region = geo.region || "Unknown";
+        const country = geo.country_name || "Unknown";
+        const isp = geo.org || "Unknown";
 
         /* Check duplicate */
-        let res = await fetch(SCRIPT_URL,{
+        const res = await fetch(SCRIPT_URL,{
             method:"POST",
             body: JSON.stringify({
                 action:"checkIP",
@@ -97,38 +102,39 @@ async function checkIP(){
             })
         });
 
-        let data = await res.json();
+        const data = await res.json();
 
-        if(data.exists){
-            status.innerText = "❌ Duplicate IP";
-            btn.disabled = false;
-            return;
+        /* Show result */
+        status.innerHTML = `
+            ${data.exists ? "❌ Duplicate" : "✅ Unique"}<br>
+            📍 City: ${city}<br>
+            🏙 State: ${region}<br>
+            🌍 Country: ${country}<br>
+            🛜 ISP: ${isp}
+        `;
+
+        /* Save only if unique */
+        if(!data.exists){
+            await fetch(SCRIPT_URL,{
+                method:"POST",
+                body: JSON.stringify({
+                    action:"addIP",
+                    ip: currentIP,
+                    city: city,
+                    region: region,
+                    country: country,
+                    isp: isp
+                })
+            });
         }
 
-        /* Save only IP (no CORS problems now) */
-        await fetch(SCRIPT_URL,{
-            method:"POST",
-            body: JSON.stringify({
-                action:"addIP",
-                ip: currentIP,
-                city: "",
-                region: "",
-                country: "",
-                isp: ""
-            })
-        });
-
-        status.innerText = "✅ Unique IP Saved";
-
-    }
-    catch(e){
+    }catch(e){
         console.log(e);
         status.innerText = "⚠️ Error";
     }
 
     btn.disabled = false;
 }
-
 </script>
 
 </body>
